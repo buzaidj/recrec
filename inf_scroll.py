@@ -3,13 +3,13 @@ class Feed:
         self.userdb = userdb
         self.recidb = recidb
 
-    def update_user_json(user_meta_json, rec, user_pref):
+    def update_user_json(self, user_meta_json, rec, user_pref):
         pass
 
     def display(self, rec):
         pass
 
-    def save_and_pickle(self, user_meta_json):
+    def save_and_pickle(self, rec, user_meta_json):
         pass
 
 
@@ -19,12 +19,13 @@ class Feed:
         
         #returns name of user_meta_json or empty if not used before
         user_meta_json = self.userdb.get(input("What is you name? \n"))
+        #eg. svm, percep, nn...
         rectype = input("What kind of recommeder would you like to use? \n")
                 
         
         recom = Recommender(rectype, user_meta_json, bool(user_meta_json), self.recidb)
 
-        if(bool(ubool(user_meta_json))):
+        if user_meta_json :
             print("Training your recommender from prior prefrences")
             recom.train(self, numrecs, user_meta_json)
 
@@ -41,7 +42,7 @@ class Feed:
             
 
         print("Saving your prefrences")
-        self.save_and_pickle(rec)
+        self.save_and_pickle(rec, user_meta_json)
 
         print("See you soon")
         
