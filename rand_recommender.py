@@ -1,5 +1,5 @@
 from typing_extensions import TypeAlias
-from process import Recommender
+from inf_scroll import Recommender
 from typing import List
 from random import choice
 
