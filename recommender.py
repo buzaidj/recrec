@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 
 class Recommender(ABC):
-    def __init__(self, rectype, userjson, recilist):
-        self.rectype = rectype
+    def __init__(self, userjson, recilist):
         self.userdb = userjson
         self.recipes = recilist
 
