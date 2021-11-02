@@ -1,10 +1,8 @@
-from typing_extensions import TypeAlias
-from inf_scroll import Recommender
+from recommender import Recommender
 from typing import List
-from random import choice
+from random import choices
 
 Recipe = dict
-
 
 class RandRecommender(Recommender):
     def __init__(self, rectype, userjson, recipes: List[Recipe]):
@@ -15,4 +13,4 @@ class RandRecommender(Recommender):
         pass
 
     def recommend(self, numrecs) -> Recipe:
-        return choice(self.recipes, k=numrecs)
+        return choices(self.recipes, k=numrecs)
