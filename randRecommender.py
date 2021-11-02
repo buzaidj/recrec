@@ -1,4 +1,4 @@
-class ranRecommender(Recommender):
+class RandRecommender(Recommender):
     def __init__(self, rectype, userjson, recjson):
         super().__init__(rectype, userjson, recjson)
 
@@ -6,6 +6,5 @@ class ranRecommender(Recommender):
         pass
         
     def recommend(self, numrecs):
-        
         self.recjson
         pass
