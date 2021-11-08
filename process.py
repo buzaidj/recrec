@@ -18,14 +18,20 @@ reads in data_file line by line and removes adjacent recipes, writing to new_fil
 """
 def elim_dups(data_file: str, new_file: str) -> None:
     last_recipe = None
+    s = set()
+    counter = 0
     with open(data_file) as f:
+        i = 0
         for line in f:
             curr_recipe = json.loads(line)
-            if not recipes_eq(last_recipe, curr_recipe):
+            h = hash(str(curr_recipe['instructions']) + str(curr_recipe['ingredients']))
+            if "Three Cheese Italian Style Chicken Sausage Skillet Pizza" in curr_recipe['title']:
+                counter += 1
+            if h not in s:
                 data.append(curr_recipe)
-                last_recipe = curr_recipe
+                s.add(h)
             # if recipes are equal, keep last data the same
-
+    print(counter)
     with open(new_file, 'w') as f_new:
         f_new.write(json.dumps(data))
 

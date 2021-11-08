@@ -55,7 +55,7 @@ class Feed:
         print("Welcome to your favorite recipe recommender RecRec: \n" )
         
         #returns name of user_meta_json or empty if not used before
-        name = input("What is you name? \n").strip().lower()
+        name = input("What is your name? \n").strip().lower()
         user_pref_file_name = self.userdict.get(name)
 
         if user_pref_file_name:
