@@ -19,25 +19,27 @@ reads in data_file line by line and removes adjacent recipes, writing to new_fil
 def elim_dups(data_file: str, new_file: str) -> None:
     last_recipe = None
     s = set()
-    counter = 0
+    counter = 1
     with open(data_file) as f:
-        i = 0
         for line in f:
             curr_recipe = json.loads(line)
             h = hash(str(curr_recipe['instructions']) + str(curr_recipe['ingredients']))
-            if "Three Cheese Italian Style Chicken Sausage Skillet Pizza" in curr_recipe['title']:
-                counter += 1
+            curr_recipe['hash'] = h
             if h not in s:
                 data.append(curr_recipe)
+                curr_recipe['line'] = counter
+                counter += 1
                 s.add(h)
             # if recipes are equal, keep last data the same
     print(counter)
+    print(len(s))
     with open(new_file, 'w') as f_new:
         f_new.write(json.dumps(data))
 
     
 # if calling process.py, just run with sys args for data file and new file
 if __name__ == "__main__":
-    data_file, new_file = sys.argv[1], sys.argv[2]
+    data_file = "allrecipes.json"
+    new_file = "preprocess_final.json"
     elim_dups(data_file, new_file)
     
