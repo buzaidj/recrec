@@ -20,25 +20,30 @@ class Feed:
         recifile.close()
 
     def update_user_json(self, userpref, rec, pref):
-        print(userpref)
         if userpref:
-            recipes = userpref["recipes"]
-            recipes["titles"] += [rec["title"]]
-            recipes["authors"] += [rec["author"]]
-            userpref["prefrences"] += pref
+            userpref["recipes_hashes"] += [hash(str(rec['instructions']) + str(rec['ingredients']))]
+            userpref["prefrences"] += [pref]
         else:
-            recipes = {}
-            recipes["titles"] = [rec["title"]]
-            recipes["authors"] = [rec["author"]]
+            userpref["recipes_hashes"] = [hash(str(rec['instructions']) + str(rec['ingredients']))]
             userpref["prefrences"] = pref
-            
-        userpref["recipes"] = recipes 
-        print(userpref)
+        
         return userpref
 
     def display(self, rec):
-        print(rec)
-        ph_url = rec[0].get("photo_url")
+        print(rec["title"])
+
+        print("Cook time in minutes: " + str(rec["total_time_minutes"]))
+
+
+        print("You will need, ingredients:")
+        for ing in rec["ingredients"]:
+            print(ing)
+
+        print("Instructions:")
+        for ins in rec["instructions"]:
+            print(ins)
+        
+        ph_url = rec.get("photo_url")
         urllib.request.urlretrieve(ph_url,"f.png")
   
         img = Image.open("f.png")
@@ -50,6 +55,13 @@ class Feed:
     def save(self, user_file, userpref):
         with open(user_file, 'w') as f:
             f.write(json.dumps(userpref))
+
+    def user_pref(self):
+        pref = input("Would you cook this? (y/n) : \n").lower()
+        while not (pref == "y" or pref == "n"):
+            print("Please make sure your input is valid")
+            pref = input("Would you cook this? (y/n) : \n").lower()
+        return pref
 
     def start(self):
         print("Welcome to your favorite recipe recommender RecRec: \n" )
@@ -82,8 +94,8 @@ class Feed:
         con = True
         while con:
             rec = recom.recommend(1) 
-            self.display(rec)
-            pref = input("Would you cook this? (y/n) : \n")
+            self.display(rec[0])
+            pref = self.user_pref()
             userpref = self.update_user_json(userpref, rec[0], pref)
             con = not (input("Would you like to quit? (q/n) : \n") == 'q')
             recom.train(userpref)
@@ -96,6 +108,6 @@ class Feed:
         
 
 if __name__ == "__main__":
-    recijson, userdb = "processed_recipes.json", "users.json"
+    recijson, userdb = "preprocess_final.json", "users.json"
     f = Feed(userdb, recijson)
     f.start()
