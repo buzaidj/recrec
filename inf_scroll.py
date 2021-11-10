@@ -25,7 +25,7 @@ class Feed:
             userpref["prefrences"] += [pref]
         else:
             userpref["recipes_hashes"] = [hash(str(rec['instructions']) + str(rec['ingredients']))]
-            userpref["prefrences"] = pref
+            userpref["prefrences"] = [pref]
         
         return userpref
 
