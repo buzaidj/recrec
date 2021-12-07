@@ -2,6 +2,7 @@ import json
 import sys
 import re
 from typing import Dict
+import sys
 
 data = []
 
@@ -44,4 +45,6 @@ def add_time_data(data_file) -> None:
         f_new.write(json.dumps(data))
 
 
-add_time_data('mit_5_recipes_prices')
+if __name__ == '__main__':
+    filename = sys.argv[1]
+    add_time_data(filename)

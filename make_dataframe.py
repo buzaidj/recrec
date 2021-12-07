@@ -4,6 +4,7 @@ from collections import Counter
 from urllib.parse import urlparse
 import pandas as pd
 import re
+import sys
 
 # foods for which we want to include the descriptor after the comma in the ingredients
 INCLUDE_EXTRA_INFO = 'spices', 'flour', 'vinegar', 'oil', 'sauce', 'rice', 'syrups', 'alcoholic beverage', 'fish'
@@ -117,7 +118,7 @@ def create_dataframe(recipes: json):
         d['sugar'] = ntr['sugars']
 
         # price and time (estiamted per recipe by us)
-        d['price'] = rec['price']
+        d['price'] = rec['cost']
         d['time'] = rec['idle_time']
         website = get_website(rec)
         if website[:4] == 'www.':
@@ -155,7 +156,8 @@ def create_dataframe(recipes: json):
 
 
 if __name__ == '__main__':
-    with open(JSON_NAME + '.json') as recp:
+    file_name = sys.argv[1]
+    with open(file_name + '.json') as recp:
         recipes = json.load(recp)
         df = create_dataframe(recipes)
-        df.to_csv(JSON_NAME + '.csv', index=False)
+        df.to_csv(file_name + '.csv', index=False)
