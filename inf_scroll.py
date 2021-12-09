@@ -2,59 +2,51 @@ import urllib.request
 from PIL import Image
 
 from rand_recommender import RandRecommender
+from os.path import exists
+
+import pandas as pd
+
 import sys
+import csv
 import json
 import ast
 
   
 
 class Feed:
-    def __init__(self, userjson, recijson):
-        self.userjson = userjson
-        userfile = open(userjson,)
-        self.userdict = json.load(userfile)
-        userfile.close()
+    def __init__(self, recis):
+        self.reci_file = recis
 
-        recifile = open(recijson,)
-        self.recilist = json.loads(recifile.readline())
-        recifile.close()
-
-    def update_user_json(self, userpref, rec, pref):
-        if userpref:
-            userpref["recipes_hashes"] += [hash(str(rec['instructions']) + str(rec['ingredients']))]
-            userpref["prefrences"] += [pref]
-        else:
-            userpref["recipes_hashes"] = [hash(str(rec['instructions']) + str(rec['ingredients']))]
-            userpref["prefrences"] = [pref]
-        
-        return userpref
+    def update_user_pref(self, user_pref_file_name, rec, pref):
+        with open(user_pref_file_name, 'w', newline='') as csvfile:
+            
 
     def display(self, rec):
-        print(rec["title"])
+        # print(rec["title"])
 
-        print("Cook time in minutes: " + str(rec["total_time_minutes"]))
+        # # print("Cook time in minutes: " + str(rec["total_time_minutes"]))
 
 
-        print("You will need, ingredients:")
-        for ing in rec["ingredients"]:
-            print(ing)
+        # print("You will need, ingredients:")
+        # for ing in rec["ingredients"]:
+        #     print(ing["text"])
 
-        print("Instructions:")
-        for ins in rec["instructions"]:
-            print(ins)
+        # print("Instructions:")
+        # for ins in rec["instructions"]:
+        #     print(ins["text"])
         
-        ph_url = rec.get("photo_url")
-        urllib.request.urlretrieve(ph_url,"f.png")
+        # # ph_url = rec.get("photo_url")
+        # # urllib.request.urlretrieve(ph_url,"f.png")
   
-        img = Image.open("f.png")
-        img.show()
+        # # img = Image.open("f.png")
+        # # img.show()
 
-    def rectype_to_rec(self, rectype, user_meta_json):
-        return RandRecommender(user_meta_json, self.recilist)
+    def rectype_to_rec(self, rectype, user_pref):
+        return RandRecommender(user_pref, self.recilist)
 
     def save(self, user_file, userpref):
         with open(user_file, 'w') as f:
-            f.write(json.dumps(userpref))
+            f.write()
 
     def user_pref(self):
         pref = input("Would you cook this? (y/n) : \n").lower()
@@ -63,31 +55,27 @@ class Feed:
             pref = input("Would you cook this? (y/n) : \n").lower()
         return pref
 
+    def parse_user_csv(self, user_pref_file_name):
+
     def start(self):
         print("Welcome to your favorite recipe recommender RecRec: \n" )
         
-        #returns name of user_meta_json or empty if not used before
         name = input("What is your name? \n").strip().lower()
-        user_pref_file_name = self.userdict.get(name)
+        user_pref_file_name = "user_" + name + ".csv"
 
-        if user_pref_file_name:
-            userfile = open(user_pref_file_name,)
-            userpref = json.load(userfile)
-            userfile.close()
-            
+        file_exists = exists(user_pref_file_name)
+        if file_exists:
+            user_pref = parse_user_csv(user_pref_file_name)
         else:
-            user_pref_file_name = "user_" + name + ".json"
-            self.userdict[name] = user_pref_file_name
-            with open(self.userjson, 'w') as f:
-                f.write(json.dumps(self.userdict))
-            userpref = {}
+            user_pref = []
 
         #eg. svm, percep, nn...
         rectype = input("What kind of recommeder would you like to use? \n")
                        
-        recom = self.rectype_to_rec(rectype, userpref)
+        recom = self.rectype_to_rec(rectype, user_pref)
+
         print("Training your recommender from prior prefrences")
-        recom.train(userpref)
+        recom.train(user_pref)
 
         print("All ready!")
         
@@ -96,7 +84,7 @@ class Feed:
             rec = recom.recommend(1) 
             self.display(rec[0])
             pref = self.user_pref()
-            userpref = self.update_user_json(userpref, rec[0], pref)
+            userpref = self.update_user_pref(user_pref_file_name, rec[0], pref)
             con = not (input("Would you like to quit? (q/n) : \n") == 'q')
             recom.train(userpref)
             
@@ -108,6 +96,6 @@ class Feed:
         
 
 if __name__ == "__main__":
-    recijson, userdb = "preprocess_final.json", "users.json"
-    f = Feed(userdb, recijson)
+    recis  = "recipes_with_nutritional_info_prices_time.csv"
+    f = Feed(recis)
     f.start()
