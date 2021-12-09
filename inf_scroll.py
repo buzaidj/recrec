@@ -64,6 +64,7 @@ class Feed:
         return d
 
     def create_train_data(self):
+        pass
 
     def startup(self):
         name = input("What is your name? \n").strip().lower()
@@ -86,6 +87,7 @@ class Feed:
     def start(self):
         print("Welcome to your favorite recipe recommender RecRec: \n")
 
+        self.startup()
         # eg. svm, percep, nn...
         rectype = input("What kind of recommeder would you like to use? \n")
 
