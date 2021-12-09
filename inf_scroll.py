@@ -3,21 +3,20 @@ from PIL import Image
 
 from rand_recommender import RandRecommender
 from os.path import exists
+from sys import exit
+
+import os
 
 import pandas as pd
 
-import sys
-import csv
-import json
-import ast
+from recommender import Recommender
+
+RECIPE_CSV = 'recipes_with_nutritional_info_prices_time.csv'
 
 
 class Feed:
     def __init__(self, recipes_filename):
         self.reci_df = pd.read_csv(recipes_filename)
-
-    def update_user_pref(self, user_pref_file_name, rec, pref):
-        with open(user_pref_file_name, 'w', newline='') as csvfile:
 
     def display(self, rec):
         raise NotImplemented
@@ -39,80 +38,55 @@ class Feed:
         # # img = Image.open("f.png")
         # # img.show()
 
-    def rectype_to_rec(self, rectype):
+    def get_recommender(self, name,  model_type, recipes) -> Recommender:
         """
-        return a Recommender from the inputted [rectype] string
+        return a Recommender from the inputted [model_type] string
         """
-        return RandRecommender()
+        user_file_name = os.path.join('users', 'user_' + name + '.csv')
+        recs_file_name = os.path.join(
+            'recs', 'recs_' + model_type + '_' + name + '.csv')
 
-    def save(self, user_file, userpref):
-        with open(user_file, 'w') as f:
-            f.write()
+        if model_type == 'rand':
+            print('hello')
+            return RandRecommender(recipes, user_file_name, recs_file_name)
 
-    def user_pref(self):
-        pref = input("Would you cook this? (y/n) : \n").lower()
-        while not (pref == "y" or pref == "n"):
-            print("Please make sure your input is valid")
-            pref = input("Would you cook this? (y/n) : \n").lower()
-        return pref
+        if model_type == 'dtree':
+            # TODO: implement dtree class
+            user_file_name = name + '_'
+            pass
+        # TODO: add other model types here
 
-    def parse_user_csv(self, user_pref_file_name):
-        df = pd.read_csv('user_james.csv', index_col=0, header=False)
-        d = {}
-        for k, v in df.to_dict('list').items():
-            d[k] = v[0]
-        return d
-
-    def create_train_data(self):
-        pass
-
-    def startup(self):
+    def run(self):
         name = input("What is your name? \n").strip().lower()
         user_pref_file_name = "user_" + name + ".csv"
-        recs_file_name = "recs_" + name + ".csv"
 
-        file_exists = exists(user_pref_file_name) and exists(recs_file_name)
-        if file_exists:
-            user_pref = parse_user_csv(user_pref_file_name)
-            prior_recs = parse_user_csv(recs_file_name)
-        else:
-            user_pref = {}
-            prior_recs = {}
+        model_type = input(
+            'Which model would you like to use? See readme.txt for a list of model types. \n').strip().lower()
 
-            with open(user_pref_file_name, 'a'):
-                pass
-            with open(recs_file_name, 'a'):
-                pass
+        # recommender may ask a new user to rate 50-100 recipies to get an idea of their preferences
+        try:
+            recommender = self.get_recommender(name, model_type, RECIPE_CSV)
+        except StopIteration:
+            print('I hope you found good recipes!')
+            exit()
+
+        print()
+        print('You chose recommender: ' + recommender.description())
+        print()
+        print('I will now begin recommending recipes and occasionally present random ones to get a better understanding of your tastes. Type q to quit and stop recommending.')
+
+        # loop and present recipes until user quits
+        while True:
+            try:
+                recommender.present_recipe()
+            except StopIteration:
+                break
+
+        print('I hope you found good recipes!')
 
     def start(self):
         print("Welcome to your favorite recipe recommender RecRec: \n")
-
-        self.startup()
-        # eg. svm, percep, nn...
-        rectype = input("What kind of recommeder would you like to use? \n")
-
-        recom = self.rectype_to_rec(rectype, user_pref)
-
-        # TODO:
-
-        print("Training your recommender from prior prefrences")
-        recom.train(user_pref)
-
-        print("All ready!")
-
-        con = True
-        while con:
-            rec = recom.recommend(1)
-            self.display(rec[0])
-            pref = self.user_pref()
-            userpref = self.update_user_pref(user_pref_file_name, rec[0], pref)
-            con = not (input("Would you like to quit? (q/n) : \n") == 'q')
-            recom.train(userpref)
-
-        print("Saving your prefrences")
-        self.save(user_pref_file_name, userpref)
-
-        print("See you soon")
+        self.run()
 
 
 if __name__ == "__main__":
