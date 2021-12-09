@@ -1,14 +1,19 @@
 from abc import ABC, abstractmethod
 
+MIN_PREFS = 100
+
 
 class Recommender(ABC):
-    def __init__(self, X):
-        self.test_X = X
+    def __init__(self, X, user_prefs, recs):
+        self.X = X
 
-    @abstractmethod
-    def train(self, train_X, train_y):
-        pass
+    def train(self, user_prefs):
+        if len(user_prefs) < MIN_PREFS:
+            initiali
 
     @abstractmethod
     def recommend(self, numrecs):
-        pass
+        train_data = self.X
+
+    @abstractmethod
+    def update_model(new_pref_row, new_pref_obs):
