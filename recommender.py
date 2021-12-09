@@ -1,19 +1,33 @@
 from abc import ABC, abstractmethod
 
-MIN_PREFS = 100
-
 
 class Recommender(ABC):
-    def __init__(self, X, user_prefs, recs):
-        self.X = X
-
-    def train(self, user_prefs):
-        if len(user_prefs) < MIN_PREFS:
-            initiali
+    @abstractmethod
+    def __init__(self, recipes, user_prefs, user_recs):
+        """
+        recipes is the file name with all recipes
+        user prefs is the file name with all prefs so far
+        user recs is the file name wiith all recs so far
+        """
+        pass
 
     @abstractmethod
-    def recommend(self, numrecs):
-        train_data = self.X
+    def train(self):
+        """
+        train the model
+        """
+        pass
 
     @abstractmethod
-    def update_model(new_pref_row, new_pref_obs):
+    def recommend(self, num_recs):
+        """
+        Reccomend num_recs recipes
+        """
+
+    @abstractmethod
+    def present_recipe(self):
+        """
+        Present a recipe to the user, either a recommendation or an observation
+
+        Record the users response in their user files
+        """
