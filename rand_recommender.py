@@ -5,10 +5,10 @@ from random import choices
 Recipe = dict
 
 class RandRecommender(Recommender):
-    def __init__(self, userjson, recipes: List[Recipe]):
-        super().__init__(userjson, recipes)
+    def __init__(self, recipes: List[Recipe]):
+        super().__init__(recipes)
 
-    def train(self, user_meta_json):
+    def train(self, user_pref):
         """ just selects a random recipe over all recipes, no training """
         pass
 
