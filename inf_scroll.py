@@ -11,6 +11,7 @@ import pandas as pd
 
 from recommender import Recommender
 from dtree import DTree
+from knn import Knn
 
 RECIPE_CSV = 'data.csv'
 
@@ -52,6 +53,9 @@ class Feed:
 
         if model_type == 'dtree':
             return DTree(recipes, user_file_name, recs_file_name)
+
+        if model_type == 'knn':
+            return Knn(recipes, user_file_name, recs_file_name)
 
             # TODO: add other model types here
 

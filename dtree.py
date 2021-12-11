@@ -1,5 +1,5 @@
 from numpy.lib.function_base import append
-from gui import present
+from gui import present, recipe_steps
 from recommender import Recommender
 import numpy as np
 import pandas as pd
@@ -55,6 +55,8 @@ class DTree(Recommender):
                 # print(self.trainX)
                 # print(row)
                 i_like = present(row)
+                if i_like:
+                    recipe_steps(row)
                 y_obs: int = bool_map(i_like)
                 self.pref_file.write(f'{idx}, {y_obs}\n')
                 self.user_pref[idx] = y_obs
@@ -82,6 +84,8 @@ class DTree(Recommender):
 
             try:
                 i_like = present(rec)
+                if i_like:
+                    recipe_steps(rec)
                 y_obs = bool_map(i_like)
                 self.rec_file.write(f'{idx}, {y_obs}\n')
                 self.prior_recs[idx] = y_obs
