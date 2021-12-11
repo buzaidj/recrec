@@ -9,9 +9,10 @@ import sys
 # foods for which we want to include the descriptor after the comma in the ingredients
 INCLUDE_EXTRA_INFO = 'spices', 'flour', 'vinegar', 'oil', 'sauce', 'rice', 'syrups', 'alcoholic beverage', 'fish'
 JSON_NAME = 'mit_5_recipes_prices_time'
-NUM_TITLE_WORDS = 100
-NUM_INGREDIENT_WORDS = 100
-BIGRAMS = True
+NUM_TITLE_WORDS = 1000
+NUM_INGREDIENT_WORDS = 1000
+BIGRAMS = False
+WEBSITES_TO_KEEP = 'delish.com', 'cooking.nytimes.com', 'epicurious.com', 'foodnetwork.com', 'chowhound.com'
 
 
 def ingr_name_parse(ingr: str):
@@ -80,7 +81,7 @@ def get_all_titles(recipes: json):
     titles = []
     for recipe in recipes:
         title = recipe['title'].lower()
-        title = re.sub(r'\W+', '', title)
+        title = re.sub(r'\W+ ', '', title)
         if BIGRAMS:
             titles.append(bigrams(title))
         else:
@@ -96,11 +97,22 @@ def top_titles(recipes: json):
 
 
 def get_website(rec):
-    return urlparse(rec['url']).netloc
+    website = urlparse(rec['url']).netloc
+    if website[:4] == 'www.':
+        website = website[4:]
+    return website
 
 
-def create_dataframe(recipes: json):
+def create_dataframe(all_recipes: json):
     rows = []
+
+    recipes = []
+    # drop all recipes with url not in WEBSITES_TO_KEEP
+    for rec in all_recipes:
+        website = get_website(rec)
+        if website in WEBSITES_TO_KEEP:
+            recipes.append(rec)
+
     titles, _ = top_titles(recipes)
     ingredients, _ = top_ingredients(recipes)
 
@@ -121,24 +133,23 @@ def create_dataframe(recipes: json):
         d['price'] = rec['cost']
         d['time'] = rec['idle_time']
         website = get_website(rec)
-        if website[:4] == 'www.':
-            website = website[4:]
 
         d['website'] = website
 
         # list of all titles in this recipe
         if BIGRAMS:
             curr_title = rec['title'].lower()
-            curr_title = re.sub(r'\W+', ' ', curr_title)
+            curr_title = re.sub(r'\W+ ', ' ', curr_title)
             curr_title = bigrams(curr_title)
             for word in titles:
-                d['title::' + str(word[0] + '_' + word[1])
-                  ] = 1 if word in curr_title else 0
-
+                if word in curr_title:
+                    d['title::' + str(word[0] + '_' + word[1])] = 1
+                else:
+                    d['title::' + str(word[0] + '_' + word[1])] = 0
         else:
             curr_title = rec['title'].lower().strip().split(' ')
-            d['title::' + str(word)
-              ] = 1 if word in curr_title else 0
+            for word in titles:
+                d['title::' + str(word)] = 1 if word in curr_title else 0
 
         curr_ingrs = get_ingredients_in_recipe(rec)
         # print(curr_ingrs)
@@ -149,6 +160,9 @@ def create_dataframe(recipes: json):
         d['_id'] = rec['id']
         d['_url'] = rec['url']
         d['_title'] = rec['title']
+        d['_steps'] = '#'.join(
+            list(map(lambda x: x['text'], rec['instructions']))
+        )
 
         rows.append(d)
 

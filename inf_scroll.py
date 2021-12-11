@@ -10,6 +10,7 @@ import os
 import pandas as pd
 
 from recommender import Recommender
+from dtree import DTree
 
 RECIPE_CSV = 'recipes_with_nutritional_info_prices_time.csv'
 
@@ -47,14 +48,12 @@ class Feed:
             'recs', 'recs_' + model_type + '_' + name + '.csv')
 
         if model_type == 'rand':
-            print('hello')
             return RandRecommender(recipes, user_file_name, recs_file_name)
 
         if model_type == 'dtree':
-            # TODO: implement dtree class
-            user_file_name = name + '_'
-            pass
-        # TODO: add other model types here
+            return DTree(recipes, user_file_name, recs_file_name)
+
+            # TODO: add other model types here
 
     def run(self):
         name = input("What is your name? \n").strip().lower()
