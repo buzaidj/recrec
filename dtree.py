@@ -99,7 +99,7 @@ class DTree(Recommender):
         print()
         self.X = pd.read_csv(recipes)
 
-        print('Welcome to the random recommender!')
+        print('Welcome to the decision tree recommender!')
         print()
 
         # open file
@@ -141,7 +141,8 @@ class DTree(Recommender):
         self.dtree.fit(self.trainX, self.trainy)
 
     def description(self):
-        return 'A random reccomender.'
+        # TODO : add a better description
+        return 'A decision tree reccomender.'
 
     def recommend(self, num_recs):
         testXinput = np.array(self.testX.drop(columns=['website']).drop(
@@ -169,7 +170,7 @@ class DTree(Recommender):
 
         except StopIteration:
             # reccomendation stats are
-            print('Rand recommender is quitting. Current stats are:')
+            print('Decision tree recommender is quitting. Current stats are:')
             num_yes = 0
             num_total = 0
             for v in self.prior_recs.values():

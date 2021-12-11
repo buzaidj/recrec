@@ -1,13 +1,7 @@
 from pandas import Series
 
 
-def present(x):
-    """
-    see if we can learn a linear rule
-    """
-
-
-def present2(x: Series):
+def present(x: Series):
     """
     Presents a recipe
     """
