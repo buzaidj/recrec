@@ -171,7 +171,7 @@ def create_dataframe(all_recipes: json):
 
 if __name__ == '__main__':
     file_name = sys.argv[1]
-    with open(file_name + '.json') as recp:
+    with open('../../' + file_name + '.json') as recp:
         recipes = json.load(recp)
         df = create_dataframe(recipes)
-        df.to_csv(file_name + '.csv', index=False)
+        df.to_csv('data' + '.csv', index=False)
