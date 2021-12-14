@@ -46,55 +46,6 @@ def bool_map(x: bool):
 
 
 class Knn(Recommender):
-    def present_train(self, num):
-        """
-        present recipes to train on, updating train data accordingly and removing it from test data
-        """
-        for idx, row in self.testX.sample(n=num).iterrows():
-            try:
-                # print(self.trainX)
-                # print(row)
-                i_like = present(row)
-                if i_like:
-                    recipe_steps(row)
-                y_obs: int = bool_map(i_like)
-                self.pref_file.write(f'{idx}, {y_obs}\n')
-                self.user_pref[idx] = y_obs
-                self.testX.drop(idx)
-                row_arr = np.array(row.drop(
-                    labels=cols_with_underscore(self.testX)).drop(labels=['website']))
-                self.trainX = np.vstack([self.trainX, row_arr])
-                # print(self.trainX)
-                self.trainy = np.append(self.trainy, y_obs)
-
-            except StopIteration:
-                # present threw an error: close files and stop iteration, then throw another StopIteration to calller
-                self.pref_file.close()
-                self.rec_file.close()
-                raise StopIteration
-
-    def present_rec(self, num):
-        """
-        present recipes to test on, updating
-        """
-        for _ in range(num):
-            idx, rec = self.pop_rec()
-            self.testX.drop(idx)
-            self.predsY.drop(idx)
-
-            try:
-                i_like = present(rec)
-                if i_like:
-                    recipe_steps(rec)
-                y_obs = bool_map(i_like)
-                self.rec_file.write(f'{idx}, {y_obs}\n')
-                self.prior_recs[idx] = y_obs
-
-            except StopIteration:
-                self.rec_file.close()
-                self.pref_file.close()
-                raise StopIteration
-
     def __init__(self, recipes, user_prefs_loc, user_recs_loc):
         """
         initialize a random recipes
@@ -125,15 +76,6 @@ class Knn(Recommender):
         self.pref_file = pref_file
         self.rec_file = rec_file
 
-        if len(user_pref) < REQD_RATINGS:
-            # we want more recs, select 50 recipes
-
-            # IF YOU ARE ACTUALLY LEARNING MAKE SURE YOU
-            # REMEMBER WHICH SUBSET OF THE DATA YOU
-            # SAMPLED TO LEARN PREFS
-            num = REQD_RATINGS - len(user_pref)
-            self.present_train(num)
-
         self.rec_count = 0
         self.rec_queue = []
 
@@ -157,16 +99,10 @@ class Knn(Recommender):
         greater_then_zero_prob = proby[self.predsY > 0]
         inds = greater_then_zero_prob.argsort()
         preds = greater_then_zero[inds]
-        return preds[0:num_recs]
-
-    def pop_rec(self):
-        NUM_RECS = 50
-        if len(self.rec_queue) == 0:
-            self.rec_queue = list(self.recommend(NUM_RECS).index)
-
+        
         idx = self.rec_queue.pop(-1)
         rec = self.testX.loc[idx]
-        return idx, rec
+        return preds[0:num_recs]
 
     def present_recipe(self):
         try:
@@ -193,3 +129,60 @@ class Knn(Recommender):
             raise StopIteration
 
         self.rec_count += 1
+
+    def present_rec(self, num):
+        """
+        present recipes to test on, updating
+        """
+        for _ in range(num):
+            idx, rec = self.recommend(1)
+            self.testX.drop(idx)
+            self.predsY.drop(idx)
+
+            try:
+                i_like = present(rec)
+                if i_like:
+                    recipe_steps(rec)
+                y_obs = bool_map(i_like)
+                self.rec_file.write(f'{idx}, {y_obs}\n')
+                self.prior_recs[idx] = y_obs
+
+            except StopIteration:
+                self.rec_file.close()
+                self.pref_file.close()
+                raise StopIteration
+
+    def present_train(self, num):
+        """
+        present recipes to train on, updating train data accordingly and removing it from test data
+        """
+        if len(self.user_pref) < REQD_RATINGS:
+            # we want more recs, select 50 recipes
+
+            # IF YOU ARE ACTUALLY LEARNING MAKE SURE YOU
+            # REMEMBER WHICH SUBSET OF THE DATA YOU
+            # SAMPLED TO LEARN PREFS
+            num = REQD_RATINGS - len(self.user_pref)
+
+        for idx, row in self.testX.sample(n=num).iterrows():
+            try:
+                # print(self.trainX)
+                # print(row)
+                i_like = present(row)
+                if i_like:
+                    recipe_steps(row)
+                y_obs: int = bool_map(i_like)
+                self.pref_file.write(f'{idx}, {y_obs}\n')
+                self.user_pref[idx] = y_obs
+                self.testX.drop(idx)
+                row_arr = np.array(row.drop(
+                    labels=cols_with_underscore(self.testX)).drop(labels=['website']))
+                self.trainX = np.vstack([self.trainX, row_arr])
+                # print(self.trainX)
+                self.trainy = np.append(self.trainy, y_obs)
+
+            except StopIteration:
+                # present threw an error: close files and stop iteration, then throw another StopIteration to calller
+                self.pref_file.close()
+                self.rec_file.close()
+                raise StopIteration

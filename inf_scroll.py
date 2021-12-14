@@ -59,7 +59,8 @@ class Feed:
 
             # TODO: add other model types here
 
-    def run(self):
+    def start(self):
+        print("Welcome to your favorite recipe recommender RecRec: Type y when presented a recipe if you would cook and type n if not: \n")
         name = input("What is your name? \n").strip().lower()
         user_pref_file_name = "user_" + name + ".csv"
 
@@ -86,11 +87,6 @@ class Feed:
                 break
 
         print('I hope you found good recipes!')
-
-    def start(self):
-        print("Welcome to your favorite recipe recommender RecRec: Type y when presented a recipe if you would cook and type n if not: \n")
-        self.run()
-
 
 if __name__ == "__main__":
     recis = "recipes_with_nutritional_info_prices_time.csv"
