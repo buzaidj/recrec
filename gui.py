@@ -20,9 +20,19 @@ def present(x: Series):
     print('Sugar (per 100g):\t\t\t', '', str(int(x['sugar'])))
     print()
     print('Price (USD):\t\t', int(x['price']))
-    print('Est time to cook:\t', int(x['time']))
+    print('Est time to cook (min):\t', int(x['time']))
     print()
 
+    x = input('Would you cook this? (y/n/q): ').lower().strip()
+    print()
+    if x == 'q' or x == 'quit':
+        raise StopIteration('User quit')
+    if x == 'yes' or x == '1' or x == 'y':
+        return True
+    return False
+
+
+def recipe_steps(x: Series):
     steps = x['_steps'].split('#')
 
     print('Instructions: ')
@@ -31,11 +41,3 @@ def present(x: Series):
     print()
     print("URL:\t", x['_url'])
     print()
-
-    x = input('My thoughts: ').lower().strip()
-    print()
-    if x == 'q' or x == 'quit':
-        raise StopIteration('User quit')
-    if x == 'yes' or x == '1' or x == 'y':
-        return True
-    return False

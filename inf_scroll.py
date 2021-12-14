@@ -11,6 +11,7 @@ import pandas as pd
 
 from recommender import Recommender
 from dtree import DTree
+from knn import Knn
 
 RECIPE_CSV = 'data.csv'
 
@@ -53,9 +54,13 @@ class Feed:
         if model_type == 'dtree':
             return DTree(recipes, user_file_name, recs_file_name)
 
+        if model_type == 'knn':
+            return Knn(recipes, user_file_name, recs_file_name)
+
             # TODO: add other model types here
 
-    def run(self):
+    def start(self):
+        print("Welcome to your favorite recipe recommender RecRec: Type y when presented a recipe if you would cook and type n if not: \n")
         name = input("What is your name? \n").strip().lower()
         user_pref_file_name = "user_" + name + ".csv"
 
@@ -82,11 +87,6 @@ class Feed:
                 break
 
         print('I hope you found good recipes!')
-
-    def start(self):
-        print("Welcome to your favorite recipe recommender RecRec: Type y when presented a recipe if you would cook and type n if not: \n")
-        self.run()
-
 
 if __name__ == "__main__":
     recis = "recipes_with_nutritional_info_prices_time.csv"
