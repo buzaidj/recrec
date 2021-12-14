@@ -7,7 +7,7 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from os.path import exists
 
-REQD_RATINGS = 120
+REQD_RATINGS = 70
 
 
 def cols_with_underscore(df):
@@ -92,17 +92,14 @@ class Knn(Recommender):
         testXinput = np.array(self.testX.drop(columns=['website']).drop(
             columns=cols_with_underscore(self.testX)))
         preds = self.neigh.predict(testXinput)
-        probs = self.neigh.predict_proba(testXinput)
-        self.predsY = pd.Series(preds, index=self.testX.index)
+        probs = self.neigh.predict_proba(testXinput)[:,1]
+        predsY = pd.Series(preds, index=self.testX.index)
         proby = pd.Series(probs, index=self.testX.index)
-        greater_then_zero = self.predsY[self.predsY > 0]
-        greater_then_zero_prob = proby[self.predsY > 0]
-        inds = greater_then_zero_prob.argsort()
-        preds = greater_then_zero[inds]
-        
-        idx = self.rec_queue.pop(-1)
-        rec = self.testX.loc[idx]
-        return preds[0:num_recs]
+        greater_then_zero = np.array(predsY[predsY > 0].index)
+        greater_then_zero_prob = np.array(proby[predsY > 0])
+        inds = np.argsort(-1*greater_then_zero_prob)
+        predsindex = greater_then_zero[inds]
+        return predsindex[:num_recs] 
 
     def present_recipe(self):
         try:
@@ -135,10 +132,9 @@ class Knn(Recommender):
         present recipes to test on, updating
         """
         for _ in range(num):
-            idx, rec = self.recommend(1)
-            self.testX.drop(idx)
-            self.predsY.drop(idx)
-
+            idx = self.recommend(1)[0]
+            rec = self.testX.loc[idx]
+            self.testX = self.testX.drop(idx)
             try:
                 i_like = present(rec)
                 if i_like:
@@ -146,6 +142,7 @@ class Knn(Recommender):
                 y_obs = bool_map(i_like)
                 self.rec_file.write(f'{idx}, {y_obs}\n')
                 self.prior_recs[idx] = y_obs
+                self.train()
 
             except StopIteration:
                 self.rec_file.close()
