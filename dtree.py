@@ -4,6 +4,8 @@ from recommender import Recommender
 import numpy as np
 import pandas as pd
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
+from sklearn import tree
+import matplotlib.pyplot as plt
 
 from os.path import exists
 
@@ -58,7 +60,7 @@ class DTree(Recommender):
                 y_obs: int = bool_map(i_like)
                 self.pref_file.write(f'{idx}, {y_obs}\n')
                 self.user_pref[idx] = y_obs
-                self.testX.drop(idx)
+                self.testX = self.testX.drop(idx)
                 row_arr = np.array(row.drop(
                     labels=cols_with_underscore(self.testX)).drop(labels=['website']))
                 self.trainX = np.vstack([self.trainX, row_arr])
@@ -77,8 +79,8 @@ class DTree(Recommender):
         """
         for _ in range(num):
             idx, rec = self.pop_rec()
-            self.testX.drop(idx)
-            self.predsY.drop(idx)
+            self.testX = self.testX.drop(idx)
+            self.testX = self.predsY.drop(idx)
 
             try:
                 i_like = present(rec)
@@ -98,6 +100,7 @@ class DTree(Recommender):
         print('Reading recipes')
         print()
         self.X = pd.read_csv(recipes)
+        # print(list(self.X.columns))
 
         print('Welcome to the decision tree recommender!')
         print()
@@ -107,8 +110,8 @@ class DTree(Recommender):
             user_prefs_loc, user_recs_loc)
 
         # testX is all the X we haven't trained on yet or presented
-        self.testX = self.X.drop(user_pref.keys()).drop(prior_recs.keys())
-        self.recX = self.X.loc[list(prior_recs.keys())]
+        self.testX = self.X.drop(user_pref.keys(), errors = 'ignore').drop(prior_recs.keys(), errors = 'ignore')
+        # self.recX = self.X.loc[list(prior_recs.keys())]
         # print(user_pref.keys())
 
         # don't use the website field
@@ -138,7 +141,10 @@ class DTree(Recommender):
         self.train()
 
     def train(self):
-        self.dtree.fit(self.trainX, self.trainy)
+        self.dtree = self.dtree.fit(self.trainX, self.trainy)
+        tree.plot_tree(self.dtree)
+        plt.show()
+        
 
     def description(self):
         # TODO : add a better description

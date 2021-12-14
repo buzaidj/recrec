@@ -132,6 +132,8 @@ def create_dataframe(all_recipes: json):
         # price and time (estiamted per recipe by us)
         d['price'] = rec['cost']
         d['time'] = rec['idle_time']
+        d['numsteps'] = len(rec['instructions']) 
+
         website = get_website(rec)
 
         d['website'] = website

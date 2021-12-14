@@ -98,7 +98,8 @@ class RandRecommender(Recommender):
         return self.rec_queue.pop(-1)
 
     def present_recipe(self):
-        if self.rec_count % 4 == 0:
+        # right now, only present user 'recs'
+        if False:
             random = True
             idx, row = next(self.data.sample(n=1).iterrows())
         else:
@@ -112,10 +113,10 @@ class RandRecommender(Recommender):
             y_obs: int = bool_map(i_like)
             if random:
                 self.pref_file.write(f'{idx}, {y_obs}\n')
-                self.user_pref[i_like] = y_obs
+                self.user_pref[idx] = y_obs
             else:
                 self.rec_file.write(f'{idx}, {y_obs}\n')
-                self.prior_recs[i_like] = y_obs
+                self.prior_recs[idx] = y_obs
 
         except StopIteration:
             # present threw an error: close files and stop iteration, then throw another StopIteration to calller
