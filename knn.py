@@ -8,6 +8,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from os.path import exists
 
 REQD_RATINGS = 70
+NUM_NEIGH = 7
 
 
 def cols_with_underscore(df):
@@ -69,7 +70,7 @@ class Knn(Recommender):
             columns=cols_with_underscore(self.X)).drop(columns=['website']).to_numpy()
         self.trainy = np.array(list(user_pref.values()))
 
-        self.neigh = KNeighborsClassifier(n_neighbors=5)
+        self.neigh = KNeighborsClassifier(n_neighbors=NUM_NEIGH)
 
         self.user_pref = user_pref
         self.prior_recs = prior_recs
@@ -171,7 +172,7 @@ class Knn(Recommender):
                 y_obs: int = bool_map(i_like)
                 self.pref_file.write(f'{idx}, {y_obs}\n')
                 self.user_pref[idx] = y_obs
-                self.testX.drop(idx)
+                self.testX = self.testX.drop(idx)
                 row_arr = np.array(row.drop(
                     labels=cols_with_underscore(self.testX)).drop(labels=['website']))
                 self.trainX = np.vstack([self.trainX, row_arr])
