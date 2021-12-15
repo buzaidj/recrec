@@ -55,7 +55,7 @@ class Knn(Recommender):
         print('Reading recipes' + '\n')
         self.X = pd.read_csv(recipes)
 
-        print('Welcome to the decision tree recommender!' + '\n')
+        print('Welcome to the K-Nearest Neighbors recommender!' + '\n')
 
         # open file
         user_pref, prior_recs, pref_file, rec_file = open_user_files(
@@ -72,12 +72,13 @@ class Knn(Recommender):
             columns=cols_with_underscore(self.X)).drop(columns=['website']).to_numpy()
 
         print(self.trainX)
-        self.trainX_std = self.stdC.fit_transform(self.trainX) 
+
+        self.trainX_std = np.array([[]])
+        if self.trainX.any():
+            self.stdC.partial_fit(self.trainX)
+            self.trainX_std = self.stdC.transform(self.trainX) 
 
         self.trainy = np.array(list(user_pref.values()))
-
-        print(len(self.trainX_std))
-        print(len(self.trainy))
 
 
         self.neigh = KNeighborsClassifier(n_neighbors=NUM_NEIGH)
@@ -88,9 +89,6 @@ class Knn(Recommender):
         self.rec_file = rec_file
 
         self.rec_count = 0
-        self.rec_queue = []
-
-        self.train()
 
     def train(self):
         self.neigh.fit(self.trainX_std, self.trainy)
@@ -143,6 +141,7 @@ class Knn(Recommender):
         """
         present recipes to test on, updating
         """
+        self.train()
         for _ in range(num):
             idx = self.recommend(1)[0]
             rec = self.testX.loc[idx]
@@ -154,7 +153,6 @@ class Knn(Recommender):
                 y_obs = bool_map(i_like)
                 self.rec_file.write(f'{idx}, {y_obs}\n')
                 self.prior_recs[idx] = y_obs
-                self.train()
 
             except StopIteration:
                 self.rec_file.close()
@@ -186,6 +184,7 @@ class Knn(Recommender):
                 self.testX = self.testX.drop(idx)
                 row_arr = np.array(row.drop(
                     labels=cols_with_underscore(self.testX)).drop(labels=['website']))
+                self.stdC.partial_fit([row_arr])
                 self.trainX_std = np.vstack([self.trainX_std, self.stdC.transform([row_arr])[0]])
                 # print(self.trainX)
                 self.trainy = np.append(self.trainy, y_obs)
