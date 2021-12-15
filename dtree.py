@@ -3,13 +3,13 @@ from gui import present, recipe_steps
 from recommender import Recommender
 import numpy as np
 import pandas as pd
-from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
-from sklearn import tree
-import matplotlib.pyplot as plt
+from sklearn.tree import DecisionTreeClassifier
+import math
 
 from os.path import exists
 
-REQD_RATINGS = 120
+REQD_RATINGS = 70
+NUM_NEIGH = 7
 
 
 def cols_with_underscore(df):
@@ -48,74 +48,22 @@ def bool_map(x: bool):
 
 
 class DTree(Recommender):
-    def present_train(self, num):
-        """
-        present recipes to train on, updating train data accordingly and removing it from test data
-        """
-        for idx, row in self.testX.sample(n=num).iterrows():
-            try:
-                # print(self.trainX)
-                # print(row)
-                i_like = present(row)
-                if i_like:
-                    recipe_steps(row)
-                y_obs: int = bool_map(i_like)
-                self.pref_file.write(f'{idx}, {y_obs}\n')
-                self.user_pref[idx] = y_obs
-                self.testX = self.testX.drop(idx)
-                row_arr = np.array(row.drop(
-                    labels=cols_with_underscore(self.testX)).drop(labels=['website']))
-                self.trainX = np.vstack([self.trainX, row_arr])
-                # print(self.trainX)
-                self.trainy = np.append(self.trainy, y_obs)
-
-            except StopIteration:
-                # present threw an error: close files and stop iteration, then throw another StopIteration to calller
-                self.pref_file.close()
-                self.rec_file.close()
-                raise StopIteration
-
-    def present_rec(self, num):
-        """
-        present recipes to test on, updating
-        """
-        for _ in range(num):
-            idx, rec = self.pop_rec()
-            self.testX = self.testX.drop(idx)
-            self.testX = self.predsY.drop(idx)
-
-            try:
-                i_like = present(rec)
-                if i_like:
-                    recipe_steps(rec)
-                y_obs = bool_map(i_like)
-                self.rec_file.write(f'{idx}, {y_obs}\n')
-                self.prior_recs[idx] = y_obs
-
-            except StopIteration:
-                self.rec_file.close()
-                self.pref_file.close()
-                raise StopIteration
-
     def __init__(self, recipes, user_prefs_loc, user_recs_loc):
         """
         initialize a random recipes
         """
-        print('Reading recipes')
-        print()
+        print('Reading recipes' + '\n')
         self.X = pd.read_csv(recipes)
-        # print(list(self.X.columns))
 
-        print('Welcome to the decision tree recommender!')
-        print()
+        print('Welcome to the decision tree recommender!' + '\n')
 
         # open file
         user_pref, prior_recs, pref_file, rec_file = open_user_files(
             user_prefs_loc, user_recs_loc)
 
         # testX is all the X we haven't trained on yet or presented
-        self.testX = self.X.drop(user_pref.keys(), errors = 'ignore').drop(prior_recs.keys(), errors = 'ignore')
-        # self.recX = self.X.loc[list(prior_recs.keys())]
+        self.testX = self.X.drop(user_pref.keys()).drop(prior_recs.keys())
+        self.recX = self.X.loc[list(prior_recs.keys())]
         # print(user_pref.keys())
 
         # don't use the website field
@@ -130,57 +78,57 @@ class DTree(Recommender):
         self.pref_file = pref_file
         self.rec_file = rec_file
 
-        if len(user_pref) < REQD_RATINGS:
-            # we want more recs, select 50 recipes
-
-            # IF YOU ARE ACTUALLY LEARNING MAKE SURE YOU
-            # REMEMBER WHICH SUBSET OF THE DATA YOU
-            # SAMPLED TO LEARN PREFS
-            num = REQD_RATINGS - len(user_pref)
-            self.present_train(num)
-
         self.rec_count = 0
         self.rec_queue = []
+
+        self.random_yes = 0
+        self.random_calls = 0
+
+        self.dtree_yes = 0
+        self.dtree_calls = 0
 
         self.train()
 
     def train(self):
-        self.dtree = self.dtree.fit(self.trainX, self.trainy)
-        tree.plot_tree(self.dtree)
-        plt.show()
-        
+        self.dtree.fit(self.trainX, self.trainy)
 
     def description(self):
         # TODO : add a better description
-        return 'A decision tree reccomender.'
+        return 'A K-Nearest Neighbor classifier'
 
     def recommend(self, num_recs):
         testXinput = np.array(self.testX.drop(columns=['website']).drop(
             columns=cols_with_underscore(self.testX)))
         preds = self.dtree.predict(testXinput)
-        self.predsY = pd.Series(preds, index=self.testX.index)
-        grt0 = self.predsY[self.predsY > 0]
-        return grt0.sample(n=num_recs)
-
-    def pop_rec(self):
-        NUM_RECS = 50
-        if len(self.rec_queue) == 0:
-            self.rec_queue = list(self.recommend(NUM_RECS).index)
-
-        idx = self.rec_queue.pop(-1)
-        rec = self.testX.loc[idx]
-        return idx, rec
+        probs = self.dtree.predict_proba(testXinput)[:,1]
+        predsY = pd.Series(preds, index=self.testX.index)
+        proby = pd.Series(probs, index=self.testX.index)
+        greater_then_zero = np.array(predsY[predsY > 0].index)
+        greater_then_zero_prob = np.array(proby[predsY > 0])
+        inds = np.argsort(-1*greater_then_zero_prob)
+        predsindex = greater_then_zero[inds]
+        return predsindex[:num_recs] 
 
     def present_recipe(self):
         try:
-            if self.rec_count % 4 == 0:
-                self.present_train(1)
-            else:
+            bigN = self.dtree_calls + self.random_calls
+            if bigN > 1:
+                g = math.sqrt(2 * math.log((1 + bigN * (math.log(bigN, 10))**2), 10))
+                dtreeUCB = (self.dtree_yes/self.dtree_calls) + g/math.sqrt(self.dtree_calls)
+                randomUCB = (self.random_yes/self.random_yes) + g/math.sqrt(self.random_calls)
+
+                if randomUCB > dtreeUCB:
+                    self.present_train(1)
+                else:
+                    self.present_rec(1)
+            elif bigN == 1:
                 self.present_rec(1)
+            else:
+                self.present_train(1)
 
         except StopIteration:
             # reccomendation stats are
-            print('Decision tree recommender is quitting. Current stats are:')
+            print('Recommender is quitting. Current stats are:')
             num_yes = 0
             num_total = 0
             for v in self.prior_recs.values():
@@ -196,3 +144,65 @@ class DTree(Recommender):
             raise StopIteration
 
         self.rec_count += 1
+
+    def present_rec(self, num):
+        """
+        present recipes to test on, updating
+        """
+        self.dtree_calls+=num
+
+        for _ in range(num):
+            idx = self.recommend(1)[0]
+            rec = self.testX.loc[idx]
+            self.testX = self.testX.drop(idx)
+            try:
+                i_like = present(rec)
+                if i_like:
+                    recipe_steps(rec)
+                    self.dtree_yes+=1
+                y_obs = bool_map(i_like)
+                self.rec_file.write(f'{idx}, {y_obs}\n')
+                self.prior_recs[idx] = y_obs
+                self.train()
+            except StopIteration:
+                self.rec_file.close()
+                self.pref_file.close()
+                raise StopIteration
+
+    def present_train(self, num):
+        """
+        present recipes to train on, updating train data accordingly and removing it from test data
+        """
+        # if len(self.user_pref) < REQD_RATINGS:
+        #     # we want more recs, select 50 recipes
+
+        #     # IF YOU ARE ACTUALLY LEARNING MAKE SURE YOU
+        #     # REMEMBER WHICH SUBSET OF THE DATA YOU
+        #     # SAMPLED TO LEARN PREFS
+        #     num = REQD_RATINGS - len(self.user_pref)
+        self.random_calls+=num
+
+
+        for idx, row in self.testX.sample(n=num).iterrows():
+            try:
+                # print(self.trainX)
+                # print(row)
+                i_like = present(row)
+                if i_like:
+                    recipe_steps(row)
+                    self.random_yes+=1
+                y_obs: int = bool_map(i_like)
+                self.pref_file.write(f'{idx}, {y_obs}\n')
+                self.user_pref[idx] = y_obs
+                self.testX = self.testX.drop(idx)
+                row_arr = np.array(row.drop(
+                    labels=cols_with_underscore(self.testX)).drop(labels=['website']))
+                self.trainX = np.vstack([self.trainX, row_arr])
+                # print(self.trainX)
+                self.trainy = np.append(self.trainy, y_obs)
+
+            except StopIteration:
+                # present threw an error: close files and stop iteration, then throw another StopIteration to calller
+                self.pref_file.close()
+                self.rec_file.close()
+                raise StopIteration
