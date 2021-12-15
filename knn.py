@@ -4,10 +4,11 @@ from recommender import Recommender
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
 
 from os.path import exists
 
-REQD_RATINGS = 70
+REQD_RATINGS = 15
 NUM_NEIGH = 7
 
 
@@ -65,10 +66,19 @@ class Knn(Recommender):
         self.recX = self.X.loc[list(prior_recs.keys())]
         # print(user_pref.keys())
 
+        self.stdC = StandardScaler()
         # don't use the website field
         self.trainX = self.X.loc[user_pref.keys()].drop(
             columns=cols_with_underscore(self.X)).drop(columns=['website']).to_numpy()
+
+        print(self.trainX)
+        self.trainX_std = self.stdC.fit_transform(self.trainX) 
+
         self.trainy = np.array(list(user_pref.values()))
+
+        print(len(self.trainX_std))
+        print(len(self.trainy))
+
 
         self.neigh = KNeighborsClassifier(n_neighbors=NUM_NEIGH)
 
@@ -83,15 +93,15 @@ class Knn(Recommender):
         self.train()
 
     def train(self):
-        self.neigh.fit(self.trainX, self.trainy)
+        self.neigh.fit(self.trainX_std, self.trainy)
 
     def description(self):
         # TODO : add a better description
         return 'A K-Nearest Neighbor classifier'
 
     def recommend(self, num_recs):
-        testXinput = np.array(self.testX.drop(columns=['website']).drop(
-            columns=cols_with_underscore(self.testX)))
+        testXinput = self.stdC.transform(np.array(self.testX.drop(columns=['website']).drop(
+            columns=cols_with_underscore(self.testX))))
         preds = self.neigh.predict(testXinput)
         probs = self.neigh.predict_proba(testXinput)[:,1]
         predsY = pd.Series(preds, index=self.testX.index)
@@ -100,6 +110,7 @@ class Knn(Recommender):
         greater_then_zero_prob = np.array(proby[predsY > 0])
         inds = np.argsort(-1*greater_then_zero_prob)
         predsindex = greater_then_zero[inds]
+        print(predsindex)
         return predsindex[:num_recs] 
 
     def present_recipe(self):
@@ -175,7 +186,7 @@ class Knn(Recommender):
                 self.testX = self.testX.drop(idx)
                 row_arr = np.array(row.drop(
                     labels=cols_with_underscore(self.testX)).drop(labels=['website']))
-                self.trainX = np.vstack([self.trainX, row_arr])
+                self.trainX_std = np.vstack([self.trainX_std, self.stdC.transform([row_arr])[0]])
                 # print(self.trainX)
                 self.trainy = np.append(self.trainy, y_obs)
 
