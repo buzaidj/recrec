@@ -56,6 +56,7 @@ class DTree(Recommender):
             try:
                 # print(self.trainX)
                 # print(row)
+                print(row)
                 i_like = present(row)
                 if i_like:
                     recipe_steps(row)
@@ -82,7 +83,7 @@ class DTree(Recommender):
         for _ in range(num):
             idx, rec = self.pop_rec()
             self.testX = self.testX.drop(idx)
-            self.testX = self.predsY.drop(idx)
+            self.predsY = self.predsY.drop(idx)
 
             try:
                 i_like = present(rec)
@@ -119,8 +120,12 @@ class DTree(Recommender):
         # print(user_pref.keys())
 
         # don't use the website field
-        self.trainX = self.X.loc[user_pref.keys()].drop(
-            columns=cols_with_underscore(self.X)).drop(columns=['website']).to_numpy()
+        try:
+            self.trainX = self.X.loc[user_pref.keys()].drop(
+                columns=cols_with_underscore(self.X)).drop(columns=['website']).to_numpy()
+        except KeyError:
+            self.trainX.drop(
+                columns=cols_with_underscore(self.X)).drop(columns=['website']).to_numpy()
         self.trainy = np.array(list(user_pref.values()))
 
         self.dtree = DecisionTreeClassifier()

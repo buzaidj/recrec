@@ -99,7 +99,7 @@ class RandRecommender(Recommender):
 
     def present_recipe(self):
         # right now, only present user 'recs'
-        if False:
+        if True:
             random = True
             idx, row = next(self.data.sample(n=1).iterrows())
         else:
