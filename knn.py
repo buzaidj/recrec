@@ -71,7 +71,6 @@ class Knn(Recommender):
         self.trainX = self.X.loc[user_pref.keys()].drop(
             columns=cols_with_underscore(self.X)).drop(columns=['website']).to_numpy()
 
-        print(self.trainX)
 
         self.trainX_std = np.array([[]])
         if self.trainX.any():
@@ -109,7 +108,6 @@ class Knn(Recommender):
         greater_then_zero_prob = np.array(proby[predsY > 0])
         inds = np.argsort(-1*greater_then_zero_prob)
         predsindex = greater_then_zero[inds]
-        print(predsindex)
         return predsindex[:num_recs] 
 
     def present_recipe(self):
@@ -197,7 +195,7 @@ class Knn(Recommender):
                     self.trainX_std = np.array([self.stdC.transform([row_arr])[0]])
                 # print(self.trainX)
                 self.trainy = np.append(self.trainy, y_obs)
-                print(self.trainX_std.shape, self.trainy)
+                
 
             except StopIteration:
                 # present threw an error: close files and stop iteration, then throw another StopIteration to calller
