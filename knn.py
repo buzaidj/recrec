@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
+import math
 
 from os.path import exists
 
@@ -61,6 +62,8 @@ class Knn(Recommender):
         user_pref, prior_recs, pref_file, rec_file = open_user_files(
             user_prefs_loc, user_recs_loc)
 
+        print(prior_recs)
+
         # testX is all the X we haven't trained on yet or presented
         self.testX = self.X.drop(user_pref.keys(), errors='ignore').drop(
             prior_recs.keys(), errors='ignore')
@@ -81,10 +84,26 @@ class Knn(Recommender):
 
         self.neigh = KNeighborsClassifier(n_neighbors=NUM_NEIGH)
 
+        self.random_yes = 0
+        self.random_calls = 0
+
+        self.knn_yes = 0
+        self.knn_calls = 0
+
         self.user_pref = user_pref
         self.prior_recs = prior_recs
         self.pref_file = pref_file
         self.rec_file = rec_file
+
+        for i in prior_recs:
+            self.knn_calls += 1
+            if prior_recs[i] == 1:
+                self.knn_yes += 1
+
+        for i in user_pref:
+            self.random_calls += 1
+            if user_pref[i] == 1:
+                self.random_yes += 1
 
         self.rec_count = 0
 
@@ -111,10 +130,29 @@ class Knn(Recommender):
 
     def present_recipe(self):
         try:
-            if self.rec_count % 4 == 0:
+            bigN = self.knn_calls + self.random_calls
+            if bigN > 1:
+                g = math.sqrt(
+                    2 * math.log((1 + bigN * (math.log(bigN, 10))**2), 10))
+                knnUCB = (self.knn_yes/self.knn_calls) + \
+                    g/math.sqrt(self.knn_calls)
+                randomUCB = (self.random_yes/self.random_calls) + \
+                    g/math.sqrt(self.random_calls)
+
+                if randomUCB > knnUCB:
+                    self.present_train(1)
+                else:
+                    try:
+                        self.present_rec(1)
+                    except ValueError:
+                        self.present_train(1)
+            elif self.random_calls == 0:
                 self.present_train(1)
             else:
-                self.present_rec(1)
+                try:
+                    self.present_rec(1)
+                except ValueError:
+                    self.present_train(1)
 
         except StopIteration:
             # reccomendation stats are
@@ -139,6 +177,8 @@ class Knn(Recommender):
         """
         present recipes to test on, updating
         """
+        self.knn_calls += num
+
         self.train()
         for _ in range(num):
             lr = self.recommend(1)
@@ -153,6 +193,7 @@ class Knn(Recommender):
                 i_like = present(rec)
                 if i_like:
                     recipe_steps(rec)
+                    self.knn_yes += 1
                 y_obs = bool_map(i_like)
                 self.rec_file.write(f'{idx}, {y_obs}\n')
                 self.prior_recs[idx] = y_obs
@@ -166,13 +207,15 @@ class Knn(Recommender):
         """
         present recipes to train on, updating train data accordingly and removing it from test data
         """
-        if len(self.user_pref) < REQD_RATINGS:
-            # we want more recs, select 50 recipes
+        self.random_calls += num
 
-            # IF YOU ARE ACTUALLY LEARNING MAKE SURE YOU
-            # REMEMBER WHICH SUBSET OF THE DATA YOU
-            # SAMPLED TO LEARN PREFS
-            num = REQD_RATINGS - len(self.user_pref)
+        # if len(self.user_pref) < REQD_RATINGS:
+        #     # we want more recs, select 50 recipes
+
+        #     # IF YOU ARE ACTUALLY LEARNING MAKE SURE YOU
+        #     # REMEMBER WHICH SUBSET OF THE DATA YOU
+        #     # SAMPLED TO LEARN PREFS
+        #     num = REQD_RATINGS - len(self.user_pref)
 
         for idx, row in self.testX.sample(n=num).iterrows():
             try:
@@ -181,6 +224,7 @@ class Knn(Recommender):
                 i_like = present(row)
                 if i_like:
                     recipe_steps(row)
+                    self.random_yes += 1
                 y_obs: int = bool_map(i_like)
                 self.pref_file.write(f'{idx}, {y_obs}\n')
                 self.user_pref[idx] = y_obs
