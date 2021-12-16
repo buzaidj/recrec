@@ -13,18 +13,21 @@ NUM_TITLE_WORDS = 1000
 NUM_INGREDIENT_WORDS = 1000
 BIGRAMS = False
 WEBSITES_TO_KEEP = 'delish.com', 'cooking.nytimes.com', 'epicurious.com', 'foodnetwork.com', 'chowhound.com'
-DESSERT_WORDS= 'treat', 'tart', 'cake', 'dessert', 'pie', 'cookie', 'candied', 'candy', 'chocolate', 'marshmallow', 'ice cream', 'caramel', 'brownie', 'custard', 'gordita', 'frosting', 'whipped cream', 'mochi', 'waffles'
 
+# dessert words
+DESSERT_WORDS = 'treat', 'tart', 'cake', 'dessert', 'pie', 'cookie', 'candied', 'candy', 'chocolate', 'marshmallow', 'ice cream', 'caramel', 'brownie', 'custard', 'gordita', 'frosting', 'whipped cream', 'mochi', 'waffles'
 
-def is_dessert(recipe):
-    if recipe is str:
-        title = recipe 
-    elif recipe is dict:
-        title = recipe['title'].lower()
-    else:
-        return False
-    return any(word in title for word in DESSERT_WORDS)
+# meat words
+MEAT_WORDS = 'beef', 'veal', 'poultry', 'pork', 'chicken', 'veal', 'mutton', 'sausage', 'meat', 'carne', 'steak', 'turkey', 'hamburger', 'burger', 'salami', 'pepperoni', 'lamb', 'thigh', 'drumstick', 'wings'
 
+# lactose words
+LACTOSE_WORDS = 'milk', 'cheese', 'butter', 'yogurt', 'ice cream', 'mozzarella', 'cheddar', 'cottage', 'swiss', 'cream', 'buttermilk', 'half-and-half', 'half and half', 'half n half'
+
+# vegetarian words
+VEGETARIAN_WORDS = 'vegetarian', 'veg', 'veggie'
+
+# non lactose words
+NON_LACTOSE_WORDS = 'lactose free', 'no lactose', 'lactose-free'
 
 def ingr_name_parse(ingr: str):
     parts = list(map(lambda x: x.strip(), ingr.split(',')))
@@ -45,6 +48,34 @@ def get_ingredients_in_recipe(single_rec):
         ingr_name = ingr_name_parse(ingr)
         ingrs.append(ingr_name)
     return ingrs
+
+def ingredients_has_WORDS(recipe, WORDS):
+    if type(recipe) == str:
+        ingr = recipe
+    elif type(recipe) == dict:
+        ingr = ' '.join(list(map(lambda x: x.lower(), get_ingredients_in_recipe(recipe))))
+    else:
+        return False
+    
+    return any(word in ingr for word in WORDS)
+
+def title_has_WORDS(recipe, WORDS):
+    if type(recipe) == str:
+        title = recipe 
+    elif type(recipe) == dict:
+        title = recipe['title'].lower()
+    else:
+        return False
+    return any(word in title for word in WORDS)
+
+def is_vegetarian(recipe):
+    return title_has_WORDS(recipe, VEGETARIAN_WORDS) or not ingredients_has_WORDS(recipe, MEAT_WORDS)
+
+def has_lactose(recipe):
+    return ingredients_has_WORDS(recipe, LACTOSE_WORDS)
+
+def is_dessert(recipe):
+    return title_has_WORDS(recipe, DESSERT_WORDS)
 
 
 def get_all_ingredients(recipes: json):
@@ -145,6 +176,7 @@ def create_dataframe(all_recipes: json):
         d['time'] = rec['idle_time']
         d['numsteps'] = len(rec['instructions']) 
 
+
         website = get_website(rec)
 
         d['website'] = website
@@ -170,6 +202,9 @@ def create_dataframe(all_recipes: json):
             d['ingr::' + str(ingr)] = 1 if ingr in curr_ingrs else 0
 
         d['dessert'] = int(is_dessert(rec))
+        d['lactose'] = int(has_lactose(rec))
+        d['vegetarian'] = int(is_vegetarian(rec))
+
         # not used for learning
         d['_id'] = rec['id']
         d['_url'] = rec['url']
