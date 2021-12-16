@@ -8,8 +8,6 @@ def present(x: Series):
     print()
     print('RECIPE: ')
 
-    print("Title:\t" + x['_title'])
-
     print()
 
     print("Calories (per 100g):\t\t\t", ' ' + str(int(x['calories'])))
@@ -33,6 +31,9 @@ def present(x: Series):
 
 
 def recipe_steps(x: Series):
+
+    print("Title:\t" + x['_title'])
+    
     steps = x['_steps'].split('#')
 
     print('Instructions: ')
