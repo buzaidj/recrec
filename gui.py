@@ -1,6 +1,10 @@
 from pandas import Series
 
 
+def yes(i):
+    return 'yes' if i != 0 else 'no'
+
+
 def present(x: Series):
     """
     Presents a recipe
@@ -9,6 +13,9 @@ def present(x: Series):
     print('RECIPE: ')
 
     print()
+
+    print('Lactose free: ' + str(yes(1 - int(x['lactose']))))
+    print('Vegetarian: ' + str(yes(x['Vegetarian'])))
 
     print("Calories (per 100g):\t\t\t", ' ' + str(int(x['calories'])))
     print('Fat (per 100g):\t\t\t\t', ' ' + str(int(x['fat'])))
@@ -33,7 +40,7 @@ def present(x: Series):
 def recipe_steps(x: Series):
 
     print("Title:\t" + x['_title'])
-    
+
     steps = x['_steps'].split('#')
 
     print('Instructions: ')
