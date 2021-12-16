@@ -11,14 +11,18 @@ from os.path import exists
 REQD_RATINGS = 70
 NUM_NEIGH = 7
 
+
 def cols_with_title_ingr(df):
     return [col for col in df.columns if '::' in col]
+
 
 def cols_with_underscores(df):
     return [col for col in df.columns if col[0] == '_']
 
+
 def cols_to_drop(df):
     return cols_with_underscores(df) + cols_with_title_ingr(df)
+
 
 def parse_user_csv(file_name):
     # print('reading csv from ' + file_name)
@@ -66,7 +70,8 @@ class DTree(Recommender):
             user_prefs_loc, user_recs_loc)
 
         # testX is all the X we haven't trained on yet or presented
-        self.testX = self.X.drop(user_pref.keys(), errors = 'ignore').drop(prior_recs.keys(), errors = 'ignore')
+        self.testX = self.X.drop(user_pref.keys(), errors='ignore').drop(
+            prior_recs.keys(), errors='ignore')
         self.recX = self.X.loc[list(prior_recs.keys())]
         # print(user_pref.keys())
 
@@ -104,22 +109,25 @@ class DTree(Recommender):
         testXinput = np.array(self.testX.drop(columns=['website']).drop(
             columns=cols_to_drop(self.testX)))
         preds = self.dtree.predict(testXinput)
-        probs = self.dtree.predict_proba(testXinput)[:,1]
+        probs = self.dtree.predict_proba(testXinput)[:, 1]
         predsY = pd.Series(preds, index=self.testX.index)
         proby = pd.Series(probs, index=self.testX.index)
         greater_then_zero = np.array(predsY[predsY > 0].index)
         greater_then_zero_prob = np.array(proby[predsY > 0])
         inds = np.argsort(-1*greater_then_zero_prob)
         predsindex = greater_then_zero[inds]
-        return predsindex[:num_recs] 
+        return predsindex[:num_recs]
 
     def present_recipe(self):
         try:
             bigN = self.dtree_calls + self.random_calls
             if bigN > 1:
-                g = math.sqrt(2 * math.log((1 + bigN * (math.log(bigN, 10))**2), 10))
-                dtreeUCB = (self.dtree_yes/self.dtree_calls) + g/math.sqrt(self.dtree_calls)
-                randomUCB = (self.random_yes/self.random_yes) + g/math.sqrt(self.random_calls)
+                g = math.sqrt(
+                    2 * math.log((1 + bigN * (math.log(bigN, 10))**2), 10))
+                dtreeUCB = (self.dtree_yes/self.dtree_calls) + \
+                    g/math.sqrt(self.dtree_calls)
+                randomUCB = (self.random_yes/self.random_yes) + \
+                    g/math.sqrt(self.random_calls)
 
                 if randomUCB > dtreeUCB:
                     self.present_train(1)
@@ -153,7 +161,7 @@ class DTree(Recommender):
         """
         present recipes to test on, updating
         """
-        self.dtree_calls+=num
+        self.dtree_calls += num
 
         for _ in range(num):
             idx = self.recommend(1)[0]
@@ -163,7 +171,7 @@ class DTree(Recommender):
                 i_like = present(rec)
                 if i_like:
                     recipe_steps(rec)
-                    self.dtree_yes+=1
+                    self.dtree_yes += 1
                 y_obs = bool_map(i_like)
                 self.rec_file.write(f'{idx}, {y_obs}\n')
                 self.prior_recs[idx] = y_obs
@@ -184,8 +192,7 @@ class DTree(Recommender):
         #     # REMEMBER WHICH SUBSET OF THE DATA YOU
         #     # SAMPLED TO LEARN PREFS
         #     num = REQD_RATINGS - len(self.user_pref)
-        self.random_calls+=num
-
+        self.random_calls += num
 
         for idx, row in self.testX.sample(n=num).iterrows():
             try:
@@ -194,7 +201,7 @@ class DTree(Recommender):
                 i_like = present(row)
                 if i_like:
                     recipe_steps(row)
-                    self.random_yes+=1
+                    self.random_yes += 1
                 y_obs: int = bool_map(i_like)
                 self.pref_file.write(f'{idx}, {y_obs}\n')
                 self.user_pref[idx] = y_obs

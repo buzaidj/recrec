@@ -3,7 +3,7 @@ from PIL import Image
 
 from rand_recommender import RandRecommender
 from os.path import exists
-from sys import exit
+from sys import exit, argv
 
 import os
 
@@ -60,14 +60,18 @@ class Feed:
             # TODO: add other model types here
 
     def start(self):
-        print("Welcome to your favorite recipe recommender RecRec: Type y when presented a recipe if you would cook and type n if not: \n")
-        name = input("What is your name? \n").strip().lower()
-        user_pref_file_name = "user_" + name + ".csv"
+        if len(argv) > 1:
+            name = argv[1].strip().lower()
+            model_type = argv[2].strip.lower()
+        else:
+            print("Welcome to your favorite recipe recommender RecRec: Type y when presented a recipe if you would cook and type n if not: \n")
+            name = input("What is your name? \n").strip().lower()
 
-        model_type = input(
-            'Which model would you like to use? See readme.txt for a list of model types. \n').strip().lower()
+            model_type = input(
+                'Which model would you like to use? See readme.txt for a list of model types. \n').strip().lower()
 
-        # recommender may ask a new user to rate 50-100 recipies to get an idea of their preferences
+            # recommender may ask a new user to rate 50-100 recipies to get an idea of their preferences
+
         try:
             recommender = self.get_recommender(name, model_type, RECIPE_CSV)
         except StopIteration:
@@ -87,6 +91,7 @@ class Feed:
                 break
 
         print('I hope you found good recipes!')
+
 
 if __name__ == "__main__":
     recis = "recipes_with_nutritional_info_prices_time.csv"
