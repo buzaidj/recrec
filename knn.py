@@ -100,12 +100,12 @@ class Knn(Recommender):
             columns=cols_with_underscore(self.testX))))
         preds = self.neigh.predict(testXinput)
         # edge case if user has only choosen one category in training(n,n,n...) then this will fail
-        probs = self.neigh.predict_proba(testXinput)[:, 1]
+        probs = self.neigh.predict_proba(testXinput)[:, 0]
         predsY = pd.Series(preds, index=self.testX.index)
         proby = pd.Series(probs, index=self.testX.index)
         greater_then_zero = np.array(predsY[predsY > 0].index)
         greater_then_zero_prob = np.array(proby[predsY > 0])
-        inds = np.argsort(-1*greater_then_zero_prob)
+        inds = np.argsort(greater_then_zero_prob)
         predsindex = greater_then_zero[inds]
         return predsindex[:num_recs]
 
