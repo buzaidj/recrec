@@ -101,6 +101,7 @@ class Knn(Recommender):
         testXinput = self.stdC.transform(np.array(self.testX.drop(columns=['website']).drop(
             columns=cols_with_underscore(self.testX))))
         preds = self.neigh.predict(testXinput)
+        ## edge case if user has only choosen one category in training(n,n,n...) then this will fail
         probs = self.neigh.predict_proba(testXinput)[:,1]
         predsY = pd.Series(preds, index=self.testX.index)
         proby = pd.Series(probs, index=self.testX.index)
@@ -143,6 +144,11 @@ class Knn(Recommender):
         """
         self.train()
         for _ in range(num):
+            lr = self.recommend(1)
+            while not lr.any():
+                self.present_train(1)
+                lr = self.recommend(1)
+                self.train()
             idx = self.recommend(1)[0]
             rec = self.testX.loc[idx]
             self.testX = self.testX.drop(idx)
@@ -185,9 +191,13 @@ class Knn(Recommender):
                 row_arr = np.array(row.drop(
                     labels=cols_with_underscore(self.testX)).drop(labels=['website']))
                 self.stdC.partial_fit([row_arr])
-                self.trainX_std = np.vstack([self.trainX_std, self.stdC.transform([row_arr])[0]])
+                if self.trainX_std.size > 0 :
+                    self.trainX_std = np.vstack([self.trainX_std, self.stdC.transform([row_arr])[0]])
+                else:
+                    self.trainX_std = np.array([self.stdC.transform([row_arr])[0]])
                 # print(self.trainX)
                 self.trainy = np.append(self.trainy, y_obs)
+                print(self.trainX_std.shape, self.trainy)
 
             except StopIteration:
                 # present threw an error: close files and stop iteration, then throw another StopIteration to calller
