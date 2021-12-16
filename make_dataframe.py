@@ -13,6 +13,17 @@ NUM_TITLE_WORDS = 1000
 NUM_INGREDIENT_WORDS = 1000
 BIGRAMS = False
 WEBSITES_TO_KEEP = 'delish.com', 'cooking.nytimes.com', 'epicurious.com', 'foodnetwork.com', 'chowhound.com'
+DESSERT_WORDS= 'treat', 'tart', 'cake', 'dessert', 'pie', 'cookie', 'candied', 'candy', 'chocolate', 'marshmallow', 'ice cream', 'caramel', 'brownie', 'custard', 'gordita', 'frosting', 'whipped cream', 'mochi', 'waffles'
+
+
+def is_dessert(recipe):
+    if recipe is str:
+        title = recipe 
+    elif recipe is dict:
+        title = recipe['title'].lower()
+    else:
+        return False
+    return any(word in title for word in DESSERT_WORDS)
 
 
 def ingr_name_parse(ingr: str):
@@ -158,6 +169,7 @@ def create_dataframe(all_recipes: json):
         for ingr in ingredients:
             d['ingr::' + str(ingr)] = 1 if ingr in curr_ingrs else 0
 
+        d['dessert'] = int(is_dessert(rec))
         # not used for learning
         d['_id'] = rec['id']
         d['_url'] = rec['url']

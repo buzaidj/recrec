@@ -62,7 +62,7 @@ class Knn(Recommender):
             user_prefs_loc, user_recs_loc)
 
         # testX is all the X we haven't trained on yet or presented
-        self.testX = self.X.drop(user_pref.keys()).drop(prior_recs.keys())
+        self.testX = self.X.drop(user_pref.keys(), errors = 'ignore').drop(prior_recs.keys(), user_pref.keys(), errors = 'ignore')
         self.recX = self.X.loc[list(prior_recs.keys())]
         # print(user_pref.keys())
 

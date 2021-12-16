@@ -11,10 +11,14 @@ from os.path import exists
 REQD_RATINGS = 70
 NUM_NEIGH = 7
 
+def cols_with_title_ingr(df):
+    return [col for col in df.columns if '::' in col]
 
-def cols_with_underscore(df):
+def cols_with_underscores(df):
     return [col for col in df.columns if col[0] == '_']
 
+def cols_to_drop(df):
+    return cols_with_underscores(df) + cols_with_title_ingr(df)
 
 def parse_user_csv(file_name):
     # print('reading csv from ' + file_name)
@@ -62,13 +66,13 @@ class DTree(Recommender):
             user_prefs_loc, user_recs_loc)
 
         # testX is all the X we haven't trained on yet or presented
-        self.testX = self.X.drop(user_pref.keys()).drop(prior_recs.keys())
+        self.testX = self.X.drop(user_pref.keys(), errors = 'ignore').drop(prior_recs.keys(), errors = 'ignore')
         self.recX = self.X.loc[list(prior_recs.keys())]
         # print(user_pref.keys())
 
         # don't use the website field
         self.trainX = self.X.loc[user_pref.keys()].drop(
-            columns=cols_with_underscore(self.X)).drop(columns=['website']).to_numpy()
+            columns=cols_to_drop(self.X)).drop(columns=['website']).to_numpy()
         self.trainy = np.array(list(user_pref.values()))
 
         self.dtree = DecisionTreeClassifier()
@@ -98,7 +102,7 @@ class DTree(Recommender):
 
     def recommend(self, num_recs):
         testXinput = np.array(self.testX.drop(columns=['website']).drop(
-            columns=cols_with_underscore(self.testX)))
+            columns=cols_to_drop(self.testX)))
         preds = self.dtree.predict(testXinput)
         probs = self.dtree.predict_proba(testXinput)[:,1]
         predsY = pd.Series(preds, index=self.testX.index)
@@ -196,7 +200,7 @@ class DTree(Recommender):
                 self.user_pref[idx] = y_obs
                 self.testX = self.testX.drop(idx)
                 row_arr = np.array(row.drop(
-                    labels=cols_with_underscore(self.testX)).drop(labels=['website']))
+                    labels=cols_to_drop(self.testX)).drop(labels=['website']))
                 self.trainX = np.vstack([self.trainX, row_arr])
                 # print(self.trainX)
                 self.trainy = np.append(self.trainy, y_obs)
