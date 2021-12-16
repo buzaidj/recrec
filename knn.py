@@ -62,7 +62,8 @@ class Knn(Recommender):
             user_prefs_loc, user_recs_loc)
 
         # testX is all the X we haven't trained on yet or presented
-        self.testX = self.X.drop(user_pref.keys(), errors = 'ignore').drop(prior_recs.keys(), user_pref.keys(), errors = 'ignore')
+        self.testX = self.X.drop(user_pref.keys(), errors='ignore').drop(
+            prior_recs.keys(), errors='ignore')
         self.recX = self.X.loc[list(prior_recs.keys())]
         # print(user_pref.keys())
 
@@ -71,14 +72,12 @@ class Knn(Recommender):
         self.trainX = self.X.loc[user_pref.keys()].drop(
             columns=cols_with_underscore(self.X)).drop(columns=['website']).to_numpy()
 
-
         self.trainX_std = np.array([[]])
         if self.trainX.any():
             self.stdC.partial_fit(self.trainX)
-            self.trainX_std = self.stdC.transform(self.trainX) 
+            self.trainX_std = self.stdC.transform(self.trainX)
 
         self.trainy = np.array(list(user_pref.values()))
-
 
         self.neigh = KNeighborsClassifier(n_neighbors=NUM_NEIGH)
 
@@ -100,15 +99,15 @@ class Knn(Recommender):
         testXinput = self.stdC.transform(np.array(self.testX.drop(columns=['website']).drop(
             columns=cols_with_underscore(self.testX))))
         preds = self.neigh.predict(testXinput)
-        ## edge case if user has only choosen one category in training(n,n,n...) then this will fail
-        probs = self.neigh.predict_proba(testXinput)[:,1]
+        # edge case if user has only choosen one category in training(n,n,n...) then this will fail
+        probs = self.neigh.predict_proba(testXinput)[:, 1]
         predsY = pd.Series(preds, index=self.testX.index)
         proby = pd.Series(probs, index=self.testX.index)
         greater_then_zero = np.array(predsY[predsY > 0].index)
         greater_then_zero_prob = np.array(proby[predsY > 0])
         inds = np.argsort(-1*greater_then_zero_prob)
         predsindex = greater_then_zero[inds]
-        return predsindex[:num_recs] 
+        return predsindex[:num_recs]
 
     def present_recipe(self):
         try:
@@ -189,13 +188,14 @@ class Knn(Recommender):
                 row_arr = np.array(row.drop(
                     labels=cols_with_underscore(self.testX)).drop(labels=['website']))
                 self.stdC.partial_fit([row_arr])
-                if self.trainX_std.size > 0 :
-                    self.trainX_std = np.vstack([self.trainX_std, self.stdC.transform([row_arr])[0]])
+                if self.trainX_std.size > 0:
+                    self.trainX_std = np.vstack(
+                        [self.trainX_std, self.stdC.transform([row_arr])[0]])
                 else:
-                    self.trainX_std = np.array([self.stdC.transform([row_arr])[0]])
+                    self.trainX_std = np.array(
+                        [self.stdC.transform([row_arr])[0]])
                 # print(self.trainX)
                 self.trainy = np.append(self.trainy, y_obs)
-                
 
             except StopIteration:
                 # present threw an error: close files and stop iteration, then throw another StopIteration to calller
