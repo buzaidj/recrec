@@ -1,5 +1,6 @@
 import urllib.request
 from PIL import Image
+from cf import Cf
 
 from rand_recommender import RandRecommender
 from os.path import exists
@@ -12,6 +13,7 @@ import pandas as pd
 from recommender import Recommender
 from dtree import DTree
 from knn import Knn
+from cf import Cf
 
 RECIPE_CSV = 'data.csv'
 
@@ -56,6 +58,9 @@ class Feed:
 
         if model_type == 'knn':
             return Knn(recipes, user_file_name, recs_file_name)
+
+        if model_type == 'cf':
+            return Cf(recipes, user_file_name, recs_file_name)
 
             # TODO: add other model types here
 

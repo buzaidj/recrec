@@ -1,3 +1,4 @@
+from re import U
 from numpy.lib.function_base import append
 from gui import present, recipe_steps
 from recommender import Recommender
@@ -11,7 +12,7 @@ from os.path import exists
 REQD_RATINGS = 15
 NUM_NEIGH = 7
 NUM_REC = 4380
-
+USER_DIR = "users"
 
 def cols_with_underscore(df):
     return [col for col in df.columns if col[0] == '_']
@@ -28,10 +29,6 @@ def parse_user_csv(file_name):
         d[k] = v[0]
     return d
 
-def test():
-    pref_file = open("user_mike", 'a')  
-    create_user_matrix("users", pref_file)  
-
 def open_user_files(user_pref_file_name, recs_file_name):
     file_exists = exists(user_pref_file_name) and exists(recs_file_name)
     if file_exists:
@@ -46,53 +43,33 @@ def open_user_files(user_pref_file_name, recs_file_name):
 
     return user_pref, prior_recs, pref_file, rec_file
 
+def user_pref_to_vec(user_pref):
+    filtered_dictionary = {key: value for key, value in user_pref.items() if value == 1} 
+    u = np.zeros(NUM_REC) 
+    u[filtered_dictionary.keys()] = 1
+    return u
 
-def users_pref_in_common(user_dir, user_file_name):
+def users_pref_in_common(user_dir,  user_file_name, u):
     l = []
     count = 0
     users_in_common = {}
-    user_pref_df = pd.read_csv(user_file_name, index_col=0, header=None)
-    user_pref_df = user_pref_df[user_pref_df[1] > 0]
-    u = np.zeros(NUM_REC) 
-    u[user_pref_df.index] = 1
+    
     for path in Path(user_dir).iterdir():
         if path.is_file() and str(path) != user_file_name:
             user_pref_df = pd.read_csv(path, index_col=0, header=None)
             user_pref_df = user_pref_df[user_pref_df[1] > 0]
             k = np.zeros(NUM_REC) 
             k[user_pref_df.index] = 1
-            users_in_common[str(path)] = (np.dot(k,u), count)
+            users_in_common[np.dot(k,u)] = count
             l.append(list(k))
             count += 1      
     return users_in_common, np.array(l)
-
-def create_user_matrix(user_dir, user_file_name):
-    
-    count = 0
-    users = []
-    user_pref_df = pd.read_csv(user_file_name, index_col=0, header=None)
-    user_pref_df = user_pref_df[user_pref_df[1] > 0]
-    u = np.zeros(NUM_REC) 
-    u[user_pref_df.index] = 1
-    for path in Path(user_dir).iterdir():
-        print(path)
-        if path.is_file() and path != user_file_name:
-            users.append(path)
-            user_pref_df = pd.read_csv(path, index_col=0, header=None)
-            user_pref_df = user_pref_df[user_pref_df[1] > 0]
-            k = np.zeros(NUM_REC) 
-            k[user_pref_df.index] = 1
-            print(k)
-            print(k[user_pref_df.index])
-            
-            count += 1       
-    return np.array(l), users
 
 def bool_map(x: bool):
     return 1 if x else -1
 
 
-class Knn(Recommender):
+class Cf(Recommender):
     def __init__(self, recipes, user_prefs_loc, user_recs_loc):
         """
         initialize a random recipes
@@ -101,7 +78,7 @@ class Knn(Recommender):
         self.X = pd.read_csv(recipes)
 
         print('Welcome to the Colaborative Filter recommender!' + '\n')
-
+        self.user_file_name = user_prefs_loc
         # open file
         user_pref, prior_recs, pref_file, rec_file = open_user_files(
             user_prefs_loc, user_recs_loc)
@@ -135,15 +112,19 @@ class Knn(Recommender):
 
         self.rec_count = 0
 
+        self.u = user_pref_to_vec(self.user_pref)
+        self.users_in_common, self.users_mat = users_pref_in_common(USER_DIR, self.user_file_name, self.u)
+
 
     def train(self):
         self.neigh.fit(self.trainX_std, self.trainy)
 
     def description(self):
         # TODO : add a better description
-        return 'A Colaborative Filter classifier'
+        return 'A Colaborative Filter'
 
     def recommend(self, num_recs):
+        # classify all unseen recipes
         testXinput = self.stdC.transform(np.array(self.testX.drop(columns=['website']).drop(
             columns=cols_with_underscore(self.testX))))
         preds = self.neigh.predict(testXinput)
@@ -154,7 +135,19 @@ class Knn(Recommender):
         greater_then_zero_prob = np.array(proby[predsY > 0])
         inds = np.argsort(-1*greater_then_zero_prob)
         predsindex = greater_then_zero[inds]
-        print(predsindex)
+
+        ## begin checking for recs from most similar user
+        max_key = max(self.users_in_common, key=self.users_in_common.get)
+        if self.users_in_common[max_key] > 0:
+            top_user_vec = self.users_mat[self.users_in_common[max_key]]
+            recs_from_most_similar = np.logical_xor(top_user_vec, np.logical_and(top_user_vec, self.u))
+            if sum(recs_from_most_similar) > 0:
+                predsY = predsY[np.where(recs_from_most_similar == 1)]
+                greater_then_zero = np.array(predsY[predsY > 0].index)
+                print("here " + greater_then_zero[:num_recs])
+                if greater_then_zero[:num_recs].any():
+                    return greater_then_zero[:num_recs] 
+        print(predsindex[:num_recs] )
         return predsindex[:num_recs] 
 
     def present_recipe(self):
@@ -227,6 +220,8 @@ class Knn(Recommender):
                 y_obs: int = bool_map(i_like)
                 self.pref_file.write(f'{idx}, {y_obs}\n')
                 self.user_pref[idx] = y_obs
+                self.u = user_pref_to_vec(self.user_pref)
+                self.users_in_common, self.users_mat = users_pref_in_common(USER_DIR, self.u)
                 self.testX = self.testX.drop(idx)
                 row_arr = np.array(row.drop(
                     labels=cols_with_underscore(self.testX)).drop(labels=['website']))
