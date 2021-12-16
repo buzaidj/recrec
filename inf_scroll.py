@@ -62,7 +62,7 @@ class Feed:
     def start(self):
         if len(argv) > 1:
             name = argv[1].strip().lower()
-            model_type = argv[2].strip.lower()
+            model_type = argv[2].strip().lower()
         else:
             print("Welcome to your favorite recipe recommender RecRec: Type y when presented a recipe if you would cook and type n if not: \n")
             name = input("What is your name? \n").strip().lower()

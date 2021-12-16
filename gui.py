@@ -17,6 +17,8 @@ def present(x: Series):
     print('Lactose free: ' + str(yes(1 - int(x['lactose']))))
     print('Vegetarian: ' + str(yes(x['vegetarian'])))
 
+    print()
+
     print("Calories (per 100g):\t\t\t", ' ' + str(int(x['calories'])))
     print('Fat (per 100g):\t\t\t\t', ' ' + str(int(x['fat'])))
     print('Saturated fat (per 100g): \t\t', ' ' + str(int(x['satfat'])))
