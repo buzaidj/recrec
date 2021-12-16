@@ -96,6 +96,16 @@ class DTree(Recommender):
         self.dtree_yes = 0
         self.dtree_calls = 0
 
+        for i in prior_recs:
+            self.dtree_calls += 1
+            if prior_recs[i] == 1:
+                self.dtree_yes += 1
+
+        for i in user_pref:
+            self.random_calls += 1
+            if user_pref[i] == 1:
+                self.random_yes += 1
+
         self.train()
 
     def train(self):
@@ -121,22 +131,22 @@ class DTree(Recommender):
     def present_recipe(self):
         try:
             bigN = self.dtree_calls + self.random_calls
-            if bigN > 1:
+            if bigN > 2:
                 g = math.sqrt(
                     2 * math.log((1 + bigN * (math.log(bigN, 10))**2), 10))
                 dtreeUCB = (self.dtree_yes/self.dtree_calls) + \
                     g/math.sqrt(self.dtree_calls)
-                randomUCB = (self.random_yes/self.random_yes) + \
+                randomUCB = (self.random_yes/self.random_calls) + \
                     g/math.sqrt(self.random_calls)
 
                 if randomUCB > dtreeUCB:
                     self.present_train(1)
                 else:
                     self.present_rec(1)
-            elif bigN == 1:
-                self.present_rec(1)
-            else:
+            elif self.random_calls == 0:
                 self.present_train(1)
+            else:
+                self.present_rec(1)
 
         except StopIteration:
             # reccomendation stats are
