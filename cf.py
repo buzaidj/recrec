@@ -8,10 +8,11 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 from pathlib import Path
 from os.path import exists
+import os
 
 REQD_RATINGS = 15
 NUM_NEIGH = 7
-NUM_REC = 4380
+NUM_REC = 4381
 USER_DIR = "users"
 
 def cols_with_underscore(df):
@@ -46,7 +47,7 @@ def open_user_files(user_pref_file_name, recs_file_name):
 def user_pref_to_vec(user_pref):
     filtered_dictionary = {key: value for key, value in user_pref.items() if value == 1} 
     u = np.zeros(NUM_REC) 
-    u[filtered_dictionary.keys()] = 1
+    u[list(filtered_dictionary.keys())] = 1
     return u
 
 def users_pref_in_common(user_dir,  user_file_name, u):
@@ -55,7 +56,7 @@ def users_pref_in_common(user_dir,  user_file_name, u):
     users_in_common = {}
     
     for path in Path(user_dir).iterdir():
-        if path.is_file() and str(path) != user_file_name:
+        if path.is_file() and os.stat(path).st_size > 0 and str(path) != user_file_name:
             user_pref_df = pd.read_csv(path, index_col=0, header=None)
             user_pref_df = user_pref_df[user_pref_df[1] > 0]
             k = np.zeros(NUM_REC) 
@@ -93,8 +94,6 @@ class Cf(Recommender):
         self.trainX = self.X.loc[user_pref.keys()].drop(
             columns=cols_with_underscore(self.X)).drop(columns=['website']).to_numpy()
 
-        print(self.trainX)
-
         self.trainX_std = np.array([[]])
         if self.trainX.any():
             self.stdC.partial_fit(self.trainX)
@@ -111,8 +110,11 @@ class Cf(Recommender):
         self.rec_file = rec_file
 
         self.rec_count = 0
+        
+        self.u = np.array([])
+        if len(self.user_pref) > 0:
+            self.u = user_pref_to_vec(self.user_pref)
 
-        self.u = user_pref_to_vec(self.user_pref)
         self.users_in_common, self.users_mat = users_pref_in_common(USER_DIR, self.user_file_name, self.u)
 
 
@@ -141,13 +143,12 @@ class Cf(Recommender):
         if self.users_in_common[max_key] > 0:
             top_user_vec = self.users_mat[self.users_in_common[max_key]]
             recs_from_most_similar = np.logical_xor(top_user_vec, np.logical_and(top_user_vec, self.u))
+            recs_from_most_similar = recs_from_most_similar[self.testX.index]
             if sum(recs_from_most_similar) > 0:
-                predsY = predsY[np.where(recs_from_most_similar == 1)]
+                predsY = predsY[recs_from_most_similar == 1]
                 greater_then_zero = np.array(predsY[predsY > 0].index)
-                print("here " + greater_then_zero[:num_recs])
                 if greater_then_zero[:num_recs].any():
                     return greater_then_zero[:num_recs] 
-        print(predsindex[:num_recs] )
         return predsindex[:num_recs] 
 
     def present_recipe(self):
@@ -221,7 +222,7 @@ class Cf(Recommender):
                 self.pref_file.write(f'{idx}, {y_obs}\n')
                 self.user_pref[idx] = y_obs
                 self.u = user_pref_to_vec(self.user_pref)
-                self.users_in_common, self.users_mat = users_pref_in_common(USER_DIR, self.u)
+                self.users_in_common, self.users_mat = users_pref_in_common(USER_DIR, self.user_file_name, self.u)
                 self.testX = self.testX.drop(idx)
                 row_arr = np.array(row.drop(
                     labels=cols_with_underscore(self.testX)).drop(labels=['website']))
