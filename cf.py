@@ -145,7 +145,8 @@ class Cf(Recommender):
                 predsY = predsY[np.where(recs_from_most_similar == 1)]
                 greater_then_zero = np.array(predsY[predsY > 0].index)
                 print("here " + greater_then_zero[:num_recs])
-                return greater_then_zero[:num_recs] 
+                if greater_then_zero[:num_recs].any():
+                    return greater_then_zero[:num_recs] 
         print(predsindex[:num_recs] )
         return predsindex[:num_recs] 
 
