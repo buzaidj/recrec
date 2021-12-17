@@ -29,6 +29,7 @@ VEGETARIAN_WORDS = 'vegetarian', 'veg', 'veggie'
 # non lactose words
 NON_LACTOSE_WORDS = 'lactose free', 'no lactose', 'lactose-free'
 
+
 def ingr_name_parse(ingr: str):
     parts = list(map(lambda x: x.strip(), ingr.split(',')))
     if parts[0] in INCLUDE_EXTRA_INFO:
@@ -49,30 +50,36 @@ def get_ingredients_in_recipe(single_rec):
         ingrs.append(ingr_name)
     return ingrs
 
+
 def ingredients_has_WORDS(recipe, WORDS):
     if type(recipe) == str:
         ingr = recipe
     elif type(recipe) == dict:
-        ingr = ' '.join(list(map(lambda x: x.lower(), get_ingredients_in_recipe(recipe))))
+        ingr = ' '.join(
+            list(map(lambda x: x.lower(), get_ingredients_in_recipe(recipe))))
     else:
         return False
-    
+
     return any(word in ingr for word in WORDS)
+
 
 def title_has_WORDS(recipe, WORDS):
     if type(recipe) == str:
-        title = recipe 
+        title = recipe
     elif type(recipe) == dict:
         title = recipe['title'].lower()
     else:
         return False
     return any(word in title for word in WORDS)
 
+
 def is_vegetarian(recipe):
     return title_has_WORDS(recipe, VEGETARIAN_WORDS) or not ingredients_has_WORDS(recipe, MEAT_WORDS)
 
+
 def has_lactose(recipe):
     return ingredients_has_WORDS(recipe, LACTOSE_WORDS)
+
 
 def is_dessert(recipe):
     return title_has_WORDS(recipe, DESSERT_WORDS)
@@ -150,6 +157,9 @@ def create_dataframe(all_recipes: json):
 
     recipes = []
     # drop all recipes with url not in WEBSITES_TO_KEEP
+
+    print(len(all_recipes))
+
     for rec in all_recipes:
         website = get_website(rec)
         if website in WEBSITES_TO_KEEP:
@@ -157,6 +167,8 @@ def create_dataframe(all_recipes: json):
 
     titles, _ = top_titles(recipes)
     ingredients, _ = top_ingredients(recipes)
+
+    print(len(recipes))
 
     for rec in recipes:
         d = {}
@@ -174,8 +186,7 @@ def create_dataframe(all_recipes: json):
         # price and time (estiamted per recipe by us)
         d['price'] = rec['cost']
         d['time'] = rec['idle_time']
-        d['numsteps'] = len(rec['instructions']) 
-
+        d['numsteps'] = len(rec['instructions'])
 
         website = get_website(rec)
 

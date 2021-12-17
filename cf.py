@@ -61,7 +61,10 @@ def users_pref_in_common(user_dir,  user_file_name, u):
             user_pref_df = user_pref_df[user_pref_df[1] > 0]
             k = np.zeros(NUM_REC) 
             k[user_pref_df.index] = 1
-            users_in_common[np.dot(k,u)] = count
+            if u.size > 0:
+                users_in_common[np.dot(k,u)] = count
+            else:
+                users_in_common[0] = count
             l.append(list(k))
             count += 1      
     return users_in_common, np.array(l)
@@ -227,7 +230,12 @@ class Cf(Recommender):
                 row_arr = np.array(row.drop(
                     labels=cols_with_underscore(self.testX)).drop(labels=['website']))
                 self.stdC.partial_fit([row_arr])
-                self.trainX_std = np.vstack([self.trainX_std, self.stdC.transform([row_arr])[0]])
+                if self.trainX_std.size > 0:
+                    self.trainX_std = np.vstack(
+                        [self.trainX_std, self.stdC.transform([row_arr])[0]])
+                else:
+                    self.trainX_std = np.array(
+                        [self.stdC.transform([row_arr])[0]])
                 # print(self.trainX)
                 self.trainy = np.append(self.trainy, y_obs)
 

@@ -1,9 +1,11 @@
+from matplotlib import pyplot as plt
 from numpy.lib.function_base import append
+from sklearn import tree
 from gui import present, recipe_steps
 from recommender import Recommender
 import numpy as np
 import pandas as pd
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, plot_tree
 import math
 
 from os.path import exists
@@ -80,7 +82,7 @@ class DTree(Recommender):
             columns=cols_to_drop(self.X)).drop(columns=['website']).to_numpy()
         self.trainy = np.array(list(user_pref.values()))
 
-        self.dtree = DecisionTreeClassifier()
+        self.dtree = DecisionTreeClassifier(ccp_alpha=0.015, random_state=0)
 
         self.user_pref = user_pref
         self.prior_recs = prior_recs
@@ -108,6 +110,14 @@ class DTree(Recommender):
 
     def train(self):
         self.dtree.fit(self.trainX, self.trainy)
+
+        fig = plt.figure(figsize=(25, 20))
+        _ = tree.plot_tree(self.dtree,
+                           feature_names=list(self.X.columns),
+                           class_names=['No', 'Yes'],
+                           filled=True)
+
+        fig.savefig("decision_tree_pruned.png")
 
     def description(self):
         # TODO : add a better description
