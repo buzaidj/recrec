@@ -106,8 +106,6 @@ class DTree(Recommender):
             if user_pref[i] == 1:
                 self.random_yes += 1
 
-        self.train()
-
     def train(self):
         self.dtree.fit(self.trainX, self.trainy)
 
@@ -116,22 +114,23 @@ class DTree(Recommender):
         return 'A K-Nearest Neighbor classifier'
 
     def recommend(self, num_recs):
+        self.train()
         testXinput = np.array(self.testX.drop(columns=['website']).drop(
             columns=cols_to_drop(self.testX)))
         preds = self.dtree.predict(testXinput)
-        probs = self.dtree.predict_proba(testXinput)[:, 1]
+        probs = self.dtree.predict_proba(testXinput)[:, 0]
         predsY = pd.Series(preds, index=self.testX.index)
         proby = pd.Series(probs, index=self.testX.index)
         greater_then_zero = np.array(predsY[predsY > 0].index)
         greater_then_zero_prob = np.array(proby[predsY > 0])
-        inds = np.argsort(-1*greater_then_zero_prob)
+        inds = np.argsort(greater_then_zero_prob)
         predsindex = greater_then_zero[inds]
         return predsindex[:num_recs]
 
     def present_recipe(self):
         try:
             bigN = self.dtree_calls + self.random_calls
-            if bigN > 2:
+            if self.random_calls != 0 and self.dtree_calls != 0:
                 g = math.sqrt(
                     2 * math.log((1 + bigN * (math.log(bigN, 10))**2), 10))
                 dtreeUCB = (self.dtree_yes/self.dtree_calls) + \
