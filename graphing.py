@@ -38,7 +38,7 @@ models_to_run = [
     (DecisionTreeClassifier(
         random_state=0, ccp_alpha=0.000), 'Decision Tree [alpha = 0.000]', False),
     (KNeighborsClassifier(
-        n_neighbors=7), 'KNeighbors Classifier [neighbors = 7]', True),
+        n_neighbors=11), 'KNeighbors Classifier [neighbors = 11]', True),
     (KNeighborsClassifier(
         n_neighbors=5), 'KNeighbors Classifier [neighbors = 5]', True),
     (KNeighborsClassifier(
@@ -96,7 +96,7 @@ for clf, name, to_normalize in models_to_run:
     accuracy_measurements = {}
     rand_accuracy = {}
 
-    idx = 10, 20, 40, 60, 80, 100, 120, 140, 160
+    idx = 20, 40, 60, 80, 100, 120, 140, 160
 
     for i in idx:
         train_X = observed.iloc[:i].to_numpy()
