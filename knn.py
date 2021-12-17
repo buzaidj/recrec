@@ -126,7 +126,7 @@ class Knn(Recommender):
     def present_recipe(self):
         try:
             bigN = self.knn_calls + self.random_calls
-            if bigN > 1:
+            if self.knn_calls != 0 and self.random_calls != 0:
                 g = math.sqrt(
                     2 * math.log((1 + bigN * (math.log(bigN, 10))**2), 10))
                 knnUCB = (self.knn_yes/self.knn_calls) + \
