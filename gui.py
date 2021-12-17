@@ -9,7 +9,7 @@ def yes(i):
 
 def get_name():
     sg.theme('DarkAmber')
-    layout = [ [sg.Text("What is your name? \n"), sg.Input(default_text = "name", key='-IN-')],
+    layout = [ [sg.Text("What is your name? \n"), sg.Input(key='-IN-')],
                 [sg.Button("All good!")] ]
     window = sg.Window("Give your name", layout)
 
@@ -116,7 +116,8 @@ def recipe_steps(x: Series):
     layout = [  [sg.Text("Title:\t" + x['_title'])],
                 [sg.Text('Instructions: ')],
                 [sg.Text(s)],
-                [sg.Text("URL:\t" + x['_url'])] ]
+                [sg.Text("URL:\t" + x['_url'])],
+                [sg.Button("Next")] ]
 
      # Create the window
     window = sg.Window("Recipe Details", layout)
@@ -127,9 +128,9 @@ def recipe_steps(x: Series):
         # End program if user closes window or
         # presses the OK button
        
-        if event == sg.WIN_CLOSED:
+        if event == "Next" or event == sg.WIN_CLOSED:
             break
-    
+        
     window.close()
 
     
