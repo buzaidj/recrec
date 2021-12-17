@@ -7,7 +7,7 @@ from os.path import exists
 from sys import exit, argv
 
 import os
-
+import gui
 import pandas as pd
 
 from recommender import Recommender
@@ -70,10 +70,9 @@ class Feed:
             model_type = argv[2].strip().lower()
         else:
             print("Welcome to your favorite recipe recommender RecRec: Type y when presented a recipe if you would cook and type n if not: \n")
-            name = input("What is your name? \n").strip().lower()
+            name = gui.get_name().strip().lower()
 
-            model_type = input(
-                'Which model would you like to use? See readme.txt for a list of model types. \n').strip().lower()
+            model_type = gui.model_types()
 
             # recommender may ask a new user to rate 50-100 recipies to get an idea of their preferences
 
