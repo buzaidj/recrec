@@ -53,17 +53,12 @@ class Knn(Recommender):
         """
         initialize a random recipes
         """
-        print('Reading recipes' + '\n')
         self.X = pd.read_csv(recipes)
-
-        print('Welcome to the K-Nearest Neighbors recommender!' + '\n')
 
         # open file
         user_pref, prior_recs, pref_file, rec_file = open_user_files(
             user_prefs_loc, user_recs_loc)
-
-        print(prior_recs)
-
+            
         # testX is all the X we haven't trained on yet or presented
         self.testX = self.X.drop(user_pref.keys(), errors='ignore').drop(
             prior_recs.keys(), errors='ignore')
