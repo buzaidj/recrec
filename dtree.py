@@ -183,7 +183,12 @@ class DTree(Recommender):
         self.dtree_calls += num
 
         for _ in range(num):
-            idx = self.recommend(1)[0]
+            lr = self.recommend(1)
+            while not lr.any():
+                self.present_train(1)
+                lr = self.recommend(1)
+                self.train()
+            idx = lr[0]
             rec = self.testX.loc[idx]
             self.testX = self.testX.drop(idx)
             try:

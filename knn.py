@@ -58,7 +58,7 @@ class Knn(Recommender):
         # open file
         user_pref, prior_recs, pref_file, rec_file = open_user_files(
             user_prefs_loc, user_recs_loc)
-            
+
         # testX is all the X we haven't trained on yet or presented
         self.testX = self.X.drop(user_pref.keys(), errors='ignore').drop(
             prior_recs.keys(), errors='ignore')
@@ -181,7 +181,7 @@ class Knn(Recommender):
                 self.present_train(1)
                 lr = self.recommend(1)
                 self.train()
-            idx = self.recommend(1)[0]
+            idx = lr[0]
             rec = self.testX.loc[idx]
             self.testX = self.testX.drop(idx)
             try:
